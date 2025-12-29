@@ -51,11 +51,10 @@ export interface PoolInfo extends PoolConfig {
   openPrice: string
   closePrice: string
 
-  // poolMinDebtRatio: string
-  // poolMaxDebtRatio: string
+  poolMinDebtRatio: bigint
+  poolMaxDebtRatio: bigint
 
-  // openFeeRatio: string
-  // closeFeeRatio: string
-  // borrowFeeRatio: string
-  // repayFeeRatio: string
+  openFeeRatio: number
+  closeFeeRatio: number
+  repayFeeRatio: number
 }

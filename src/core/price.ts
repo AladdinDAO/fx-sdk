@@ -38,9 +38,9 @@ export class Price {
       throw new Error('Unexpected result from getPrice')
     }
     return {
-      anchorPrice: cBN(oraclePrice[0]).div(1e18).toString(),
-      minPrice: cBN(oraclePrice[1]).div(1e18).toString(),
-      maxPrice: cBN(oraclePrice[2]).div(1e18).toString(),
+      anchorPrice: oraclePrice[0],
+      minPrice: oraclePrice[1],
+      maxPrice: oraclePrice[2],
     }
   }
 

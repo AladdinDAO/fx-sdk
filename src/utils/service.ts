@@ -3,10 +3,12 @@ import { getClient } from '@/core/client'
 import { contracts } from '@/configs/contracts'
 import MultiPathConverterAbi from '@/abis/MultiPathConverter.json'
 import { tokens } from '@/configs/tokens'
+import { ConvertData } from '@/types'
+import AFPoolAbi from '@/abis/AFPool.json'
 
-export const callDecimals = async (address: string) => {
+export const getDecimals = async (address: string) => {
   if (address === tokens.eth) {
-    return 18
+    return BigInt(18)
   }
 
   return (await getClient().readContract({
@@ -16,9 +18,9 @@ export const callDecimals = async (address: string) => {
   })) as bigint
 }
 
-export const callQueryConvert = async (
+export const getQueryConvert = async (
   amount: bigint,
-  convertData: { encoding: bigint; routes: string[] }
+  convertData: ConvertData
 ) => {
   return (await getClient().readContract({
     address: contracts.TokenConverter_MultiPathConverter as `0x${string}`,
@@ -26,4 +28,19 @@ export const callQueryConvert = async (
     functionName: 'queryConvert',
     args: [amount, convertData.encoding, convertData.routes],
   })) as bigint
+}
+
+export const getOwnerOf = async (poolAddress: string, positionId: number) => {
+  return (await getClient().readContract({
+    address: poolAddress as `0x${string}`,
+    abi: AFPoolAbi,
+    functionName: 'ownerOf',
+    args: [positionId],
+  })) as string
+}
+
+export const getNonce = async (address: string) => {
+  return (await getClient().getTransactionCount({
+    address: address as `0x${string}`,
+  })) as number
 }

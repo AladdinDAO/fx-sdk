@@ -1,7 +1,7 @@
 import axios from 'axios'
 import Decimal from 'decimal.js'
 import { Aggregator, ROUTE_TYPES } from '@/core/aggregators/types'
-import { callDecimals } from '@/utils/call'
+import { getDecimals } from '@/utils/service'
 
 const PARA_BASE_URL = 'https://api.paraswap.io'
 
@@ -25,8 +25,8 @@ export class Velora extends Aggregator {
     amount: bigint
     chainId?: number
   }) {
-    const srcDecimals = await callDecimals(src)
-    const dstDecimals = await callDecimals(dst)
+    const srcDecimals = await getDecimals(src)
+    const dstDecimals = await getDecimals(dst)
     const response = await http.get(`${PARA_BASE_URL}/prices`, {
       params: {
         srcToken: src,
@@ -70,8 +70,8 @@ export class Velora extends Aggregator {
     receiver: string
     chainId?: number
   }) {
-    const srcDecimals = await callDecimals(src)
-    const dstDecimals = await callDecimals(dst)
+    const srcDecimals = await getDecimals(src)
+    const dstDecimals = await getDecimals(dst)
 
     const priceResponse = await http.get(`${PARA_BASE_URL}/prices`, {
       params: {

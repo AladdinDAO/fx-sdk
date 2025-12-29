@@ -1,0 +1,366 @@
+# FX SDK
+
+FX Protocol SDK is a TypeScript/JavaScript SDK for interacting with the FX Protocol. It provides comprehensive functionality for creating and managing leveraged positions.
+
+## Installation
+
+```bash
+npm install fx-sdk
+# or
+yarn add fx-sdk
+# or
+pnpm add fx-sdk
+```
+
+## Import Guide
+
+The SDK's main entry point exports:
+
+```typescript
+import { FxSdk } from 'fx-sdk'
+import type { FxSdkConfig } from 'fx-sdk'
+```
+
+If you need `PoolName` and `tokens` constants, you may need to import them from sub-paths, or define them directly in your code (see examples below).
+
+## Quick Start
+
+### Initialize SDK
+
+```typescript
+import { FxSdk } from 'fx-sdk'
+
+// Use default configuration (mainnet)
+const sdk = new FxSdk()
+
+// Use custom RPC URL and chain ID
+const sdk = new FxSdk({
+  rpcUrl: 'https://your-rpc-url.com',
+  chainId: 1, // Mainnet
+})
+```
+
+### Increase Position
+
+Open a new position or add to an existing position:
+
+```typescript
+import { FxSdk } from 'fx-sdk'
+
+// Define PoolName (if not exported from SDK)
+const PoolName = {
+  wstETH: 'wstETH',
+  WBTC: 'WBTC',
+  wstETH_short: 'wstETH_short',
+  WBTC_short: 'WBTC_short',
+} as const
+
+// Define common token addresses
+const tokens = {
+  fxUSD: '0x085780639cc2cacd35e474e71f4d000e2405d8f6',
+  wstETH: '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
+  WBTC: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
+  eth: '0x0000000000000000000000000000000000000000',
+  weth: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+  usdc: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+  usdt: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+  stETH: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
+}
+
+const sdk = new FxSdk()
+
+const result = await sdk.increasePosition({
+  poolName: PoolName.wstETH, // or PoolName.WBTC, PoolName.wstETH_short, PoolName.WBTC_short
+  positionId: 0, // 0 means open new position, > 0 means existing position ID
+  leverage: 3, // Leverage multiplier
+  inputTokenAddress: tokens.weth, // Input token address
+  amount: 100000000000000000000n, // Input amount (wei units, 1 ETH = 10^18)
+  slippage: 1, // Slippage tolerance (percentage, e.g., 1 means 1%)
+  userAddress: '0x...', // User address
+  targets: [], // Optional: specify route types
+})
+
+// result contains multiple route options
+// result.routes is an array, each route contains:
+// - routeType: Route type
+// - positionId: Position ID
+// - newLeverage: New leverage multiplier
+// - slippage: Slippage
+// - priceImpact: Price impact
+// - colls: Collateral amount
+// - debts: Debt amount
+// - txs: Transaction array (contains approve and trade transactions with nonce set)
+```
+
+### Reduce Position
+
+Reduce or close a position:
+
+```typescript
+const result = await sdk.reducePosition({
+  poolName: PoolName.wstETH,
+  positionId: 706, // Existing position ID
+  outputTokenAddress: tokens.wstETH, // Output token address
+  amount: 30000000000000000n, // Amount to reduce (wei units)
+  slippage: 1,
+  userAddress: '0x...',
+  isClosePosition: false, // true means fully close position
+})
+```
+
+### Adjust Leverage
+
+Adjust the leverage multiplier of an existing position:
+
+```typescript
+const result = await sdk.adjustPositionLeverage({
+  poolName: PoolName.wstETH,
+  positionId: 706,
+  leverage: 3, // New leverage multiplier
+  slippage: 1,
+  userAddress: '0x...',
+})
+```
+
+### Deposit and Mint
+
+Deposit collateral to a position and mint fxUSD:
+
+```typescript
+const result = await sdk.depositAndMint({
+  poolName: PoolName.wstETH,
+  positionId: 706,
+  depositTokenAddress: tokens.stETH, // Deposit token address
+  depositAmount: 1000000000000000000n, // Deposit amount (1 ETH)
+  mintAmount: 1000000000000000000000n, // Amount of fxUSD to mint
+  userAddress: '0x...',
+})
+```
+
+### Repay and Withdraw
+
+Repay debt and withdraw collateral:
+
+```typescript
+const result = await sdk.repayAndWithdraw({
+  poolName: PoolName.wstETH,
+  positionId: 706,
+  repayAmount: 500000000000000000000n, // Amount of fxUSD to repay
+  withdrawAmount: 200000000000000000n, // Amount of collateral to withdraw
+  withdrawTokenAddress: tokens.wstETH, // Withdraw token address
+  userAddress: '0x...',
+})
+```
+
+## Supported Pools
+
+The SDK supports the following pools (using `PoolName` enum):
+
+- `PoolName.wstETH` - wstETH long pool
+- `PoolName.WBTC` - WBTC long pool
+- `PoolName.wstETH_short` - wstETH short pool
+- `PoolName.WBTC_short` - WBTC short pool
+
+## Supported Tokens
+
+The SDK provides addresses for commonly used tokens. You need to use the token contract addresses, common token addresses are as follows:
+
+```typescript
+// Common token addresses (Ethereum mainnet)
+const tokens = {
+  fxUSD: '0x085780639cc2cacd35e474e71f4d000e2405d8f6',
+  wstETH: '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
+  WBTC: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
+  eth: '0x0000000000000000000000000000000000000000', // Native ETH
+  weth: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+  usdc: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+  usdt: '0xdac17f958d2ee523a2206206994597c13d831ec7',
+  stETH: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
+}
+```
+
+## Transaction Execution
+
+The transaction array returned by the SDK already includes the required approve transactions and the main transaction, and each transaction has been assigned the correct nonce to ensure sequential execution.
+
+```typescript
+const result = await sdk.increasePosition({...})
+
+// Iterate through route options
+for (const route of result.routes) {
+  // route.txs is an array of transactions, executed in order
+  // Usually contains:
+  // 1. approveToken transaction (if needed)
+  // 2. approvePosition transaction (if needed, only when positionId > 0)
+  // 3. Main transaction (trade)
+  
+  for (const tx of route.txs) {
+    // tx.type: 'approveToken' | 'approvePosition' | 'trade'
+    // tx.from: Sender address
+    // tx.to: Target contract address
+    // tx.data: Transaction data
+    // tx.nonce: Transaction nonce (already set)
+    
+    // Use your wallet to send transaction
+    // await wallet.sendTransaction(tx)
+  }
+}
+```
+
+## Type Definitions
+
+### FxSdkConfig
+
+```typescript
+interface FxSdkConfig {
+  rpcUrl?: string  // Optional: RPC URL, defaults to configured value
+  chainId?: number // Optional: Chain ID, default is 1 (mainnet)
+}
+```
+
+### IncreasePositionRequest
+
+```typescript
+interface IncreasePositionRequest {
+  poolName: PoolName
+  positionId: number        // 0 means open new position, > 0 means existing position ID
+  leverage: number          // Leverage multiplier
+  inputTokenAddress: string // Input token address
+  amount: bigint           // Input amount (wei units)
+  slippage: number         // Slippage tolerance (percentage)
+  userAddress: string      // User address
+  targets?: ROUTE_TYPES[]  // Optional: specify route types
+}
+```
+
+### ReducePositionRequest
+
+```typescript
+interface ReducePositionRequest {
+  poolName: PoolName
+  positionId: number
+  outputTokenAddress: string // Output token address
+  amount: bigint            // Amount to reduce (wei units)
+  slippage: number
+  userAddress: string
+  isClosePosition?: boolean // Whether to fully close position
+  targets?: ROUTE_TYPES[]
+}
+```
+
+### AdjustPositionLeverageRequest
+
+```typescript
+interface AdjustPositionLeverageRequest {
+  poolName: PoolName
+  positionId: number
+  leverage: number    // New leverage multiplier
+  slippage: number
+  userAddress: string
+  targets?: ROUTE_TYPES[]
+}
+```
+
+### DepositAndMintRequest 
+```typescript
+interface DepositAndMintRequest {
+  poolName: PoolName
+  positionId: number
+  userAddress: string
+  depositTokenAddress: string
+  depositAmount: bigint
+  mintAmount: bigint
+}
+```
+
+### RepayAndWithdrawRequest
+```typescript
+export interface RepayAndWithdrawRequest {
+  poolName: PoolName
+  positionId: number
+  userAddress: string
+  repayAmount: bigint
+  withdrawAmount: bigint
+  withdrawTokenAddress: string
+}
+```
+
+## Important Notes
+
+1. **Amount Units**: All amounts use wei units (bigint). For example, 1 ETH = `1000000000000000000n` (10^18).
+
+2. **Nonce Management**: The SDK automatically sets the correct nonce for transactions to ensure sequential execution. Each time you call an SDK method, it fetches the current nonce and assigns from that value.
+
+3. **Position ID**:
+   - `positionId = 0`: Open new position
+   - `positionId > 0`: Operate on existing position (must be the owner of that position)
+
+4. **Slippage**: Slippage is expressed as a percentage (e.g., 1 means 1%), should be between 0 and 100.
+
+5. **RPC Client**: The SDK uses a singleton pattern to manage the RPC client, with only one client instance globally. The configuration passed during first initialization is used, and subsequent calls reuse the same client.
+
+6. **Error Handling**: All methods may throw errors, please use try-catch for error handling.
+
+## Example
+
+### Complete Open Position Example
+
+```typescript
+import { FxSdk } from 'fx-sdk'
+
+// Define token addresses (you can create your own tokens constant)
+const tokens = {
+  weth: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
+  wstETH: '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
+  // ... other tokens
+}
+
+// Define PoolName enum values (if not exported from SDK)
+const PoolName = {
+  wstETH: 'wstETH',
+  WBTC: 'WBTC',
+  wstETH_short: 'wstETH_short',
+  WBTC_short: 'WBTC_short',
+} as const
+
+async function openPosition() {
+  const sdk = new FxSdk({
+    rpcUrl: 'https://eth.llamarpc.com',
+    chainId: 1,
+  })
+
+  try {
+    const result = await sdk.increasePosition({
+      poolName: PoolName.wstETH,
+      positionId: 0, // Open new position
+      leverage: 3,
+      inputTokenAddress: tokens.weth,
+      amount: 100000000000000000000n, // 100 ETH
+      slippage: 1,
+      userAddress: '0xYourAddress',
+    })
+
+    console.log(`Found ${result.routes.length} route options`)
+
+    // Select the first route (usually the best)
+    const selectedRoute = result.routes[0]
+    
+    // Execute transactions
+    for (const tx of selectedRoute.txs) {
+      // Use your wallet to send transaction
+      console.log('Sending transaction:', tx.type, 'nonce:', tx.nonce)
+      // const hash = await wallet.sendTransaction(tx)
+      // await waitForTransaction(hash)
+    }
+
+    console.log(`Position ID: ${selectedRoute.positionId}`)
+    console.log(`New leverage: ${selectedRoute.newLeverage}`)
+  } catch (error) {
+    console.error('Transaction failed:', error)
+  }
+}
+```
+
+## License
+
+MIT

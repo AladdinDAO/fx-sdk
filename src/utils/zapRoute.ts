@@ -1,4 +1,5 @@
 import { getRouter } from '@/configs/routers'
+import { ConvertData } from '@/types'
 
 export const getZapRoutes = ({
   fromTokenAddress,
@@ -16,7 +17,7 @@ export const getZapRoutes = ({
     )
   }
   return {
-    encoding: (routerData[2] || 0n) as bigint,
-    routes: routerData[1] as string[],
-  }
+    encoding: routerData[2] || 0n,
+    routes: routerData[1],
+  } as ConvertData
 }
