@@ -3,8 +3,9 @@ import { getClient } from '@/core/client'
 import { contracts } from '@/configs/contracts'
 import MultiPathConverterAbi from '@/abis/MultiPathConverter.json'
 import { tokens } from '@/configs/tokens'
-import { ConvertData } from '@/types'
+import { ConvertData, PoolName } from '@/types'
 import AFPoolAbi from '@/abis/AFPool.json'
+import { pools } from '@/configs/pools'
 
 export const getDecimals = async (address: string) => {
   if (address === tokens.eth) {
@@ -43,4 +44,31 @@ export const getNonce = async (address: string) => {
   return (await getClient().getTransactionCount({
     address: address as `0x${string}`,
   })) as number
+}
+
+export const getPositionsByUser = async (poolName: PoolName, userAddress: string) => {
+  const response = await fetch(pools[poolName].graphUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      query: `query MyQuery {
+      positions(
+        first: 1000
+        where: {owner: "${userAddress.toLowerCase()}"}
+        orderBy: blockNumber
+        orderDirection: desc
+      ) {
+          id
+        }
+    }`,
+    }),
+  })
+
+  const result = await response.json()
+
+  const { data } = result as { data: { positions: { id: string }[] } }
+
+  return data.positions.map((position) => Number(position.id))
 }

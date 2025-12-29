@@ -1,10 +1,12 @@
 import { getClient } from '@/core/client'
 import { isAddress } from 'viem'
 import { Position } from '@/core/position'
-import { PoolName } from '@/types'
 import { Pool } from '@/core/pool'
-import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest } from '@/types'
+import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest, Market, PositionType } from '@/types'
 import { getOwnerOf } from '@/utils/service'
+import { getPoolName } from '@/utils'
+import { getPositionsByUser } from '@/utils/service'
+import { tokens } from '@/configs/tokens'
 
 export interface FxSdkConfig {
   rpcUrl?: string
@@ -16,9 +18,39 @@ export class FxSdk {
     getClient(config?.chainId, config?.rpcUrl)
   }
 
+  async getPositions(request: {
+    userAddress: string
+    market: Market
+    type: PositionType
+  }) {
+    const { userAddress, market, type } = request
+
+    const poolName = getPoolName(market, type)
+
+    const positionIds = await getPositionsByUser(poolName, userAddress)
+
+    if (positionIds.length === 0) {
+      return []
+    }
+
+    const pool = new Pool({ poolName })
+    const poolInfo = await pool.getPoolInfo()
+
+    const positions = await Promise.all(positionIds.map(async (positionId) => {
+      return new Position({
+        positionId,
+        poolInfo,
+        userAddress,
+      }).getPositionInfo()
+    }))
+
+    return positions
+  } 
+
   async increasePosition(request: IncreasePositionRequest) {
     const {
-      poolName,
+      market,
+      type,
       positionId,
       leverage,
       inputTokenAddress,
@@ -51,8 +83,16 @@ export class FxSdk {
       throw new Error('User address is not a valid address')
     }
 
-    if (!(poolName in PoolName)) {
-      throw new Error('Pool name is not supported')
+    const poolName = getPoolName(market, type)
+
+    if (market === 'ETH') {
+      if (![tokens.stETH, tokens.weth, tokens.wstETH, tokens.usdc, tokens.usdt, tokens.fxUSD].includes(inputTokenAddress)) {
+        throw new Error('Input token address must be stETH, weth, wstETH, usdc, usdt or fxUSD')
+      }
+    } else if (market === 'BTC') {
+      if (![tokens.WBTC, tokens.usdc, tokens.usdt, tokens.fxUSD].includes(inputTokenAddress)) {
+        throw new Error('Input token address must be WBTC, usdc, usdt or fxUSD')
+      }
     }
 
     const pool = new Pool({ poolName })
@@ -80,7 +120,8 @@ export class FxSdk {
 
   async reducePosition(request: ReducePositionRequest) {
     const {
-      poolName,
+      market,
+      type,
       positionId,
       outputTokenAddress,
       amount,
@@ -108,8 +149,16 @@ export class FxSdk {
       throw new Error('User address is not a valid address')
     }
 
-    if (!(poolName in PoolName)) {
-      throw new Error('Pool name is not supported')
+    const poolName = getPoolName(market, type)
+
+    if (market === 'ETH') {
+      if (![tokens.stETH, tokens.weth, tokens.wstETH, tokens.usdc, tokens.usdt, tokens.fxUSD].includes(outputTokenAddress)) {
+        throw new Error('Output token address must be stETH, weth, wstETH, usdc, usdt or fxUSD')
+      }
+    } else if (market === 'BTC') {
+      if (![tokens.WBTC, tokens.usdc, tokens.usdt, tokens.fxUSD].includes(outputTokenAddress)) {
+        throw new Error('Output token address must be WBTC, usdc, usdt or fxUSD')
+      }
     }
 
     const pool = new Pool({ poolName })
@@ -137,7 +186,8 @@ export class FxSdk {
 
   async adjustPositionLeverage(request: AdjustPositionLeverageRequest) {
     const {
-      poolName,
+      market,
+      type,
       positionId,
       leverage,
       slippage,
@@ -160,9 +210,7 @@ export class FxSdk {
       throw new Error('User address is not a valid address')
     }
 
-    if (!(poolName in PoolName)) {
-      throw new Error('Pool name is not supported')
-    }
+    const poolName = getPoolName(market, type)
 
     const pool = new Pool({ poolName })
 
@@ -186,7 +234,7 @@ export class FxSdk {
 
   async depositAndMint(request: DepositAndMintRequest) {
     const {
-      poolName,
+      market,
       positionId,
       depositTokenAddress,
       depositAmount,
@@ -214,8 +262,16 @@ export class FxSdk {
       throw new Error('User address is not a valid address')
     }
 
-    if (!(poolName in PoolName)) {
-      throw new Error('Pool name is not supported')
+    const poolName = getPoolName(market, 'long')
+
+    if (market === 'ETH') {
+      if (![tokens.stETH, tokens.weth, tokens.wstETH].includes(depositTokenAddress)) {
+        throw new Error('Deposit token address must be stETH, weth or wstETH')
+      }
+    } else if (market === 'BTC') {
+      if (![tokens.WBTC].includes(depositTokenAddress)) {
+        throw new Error('Deposit token address must be WBTC')
+      }
     }
 
     const pool = new Pool({ poolName })
@@ -243,7 +299,7 @@ export class FxSdk {
 
   async repayAndWithdraw(request: RepayAndWithdrawRequest) {
     const {
-      poolName,
+      market,
       positionId,
       repayAmount,
       withdrawAmount,
@@ -271,8 +327,16 @@ export class FxSdk {
       throw new Error('User address is not a valid address')
     }
 
-    if (!(poolName in PoolName)) {
-      throw new Error('Pool name is not supported')
+    const poolName = getPoolName(market, 'long')
+
+    if (market === 'ETH') {
+      if (![tokens.stETH, tokens.weth, tokens.wstETH].includes(withdrawTokenAddress)) {
+        throw new Error('Withdraw token address must be stETH, weth or wstETH')
+      }
+    } else if (market === 'BTC') {
+      if (![tokens.WBTC].includes(withdrawTokenAddress)) {
+        throw new Error('Withdraw token address must be WBTC')
+      }
     }
 
     const pool = new Pool({ poolName })
@@ -297,5 +361,4 @@ export class FxSdk {
       withdrawTokenAddress: withdrawTokenAddress.toLowerCase(),
     })
   }
-
 }

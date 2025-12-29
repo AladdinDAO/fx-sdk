@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { FxSdk } from '../src/core'
-import { PoolName } from '../src/types/pool'
 import { tokens } from '../src/configs/tokens'
 
 describe('FxSDK - Edge Cases', () => {
@@ -12,7 +11,8 @@ describe('FxSDK - Edge Cases', () => {
       'should handle opening new position with minimal amount',
       async () => {
         const result = await sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 2,
           inputTokenAddress: tokens.weth,
@@ -31,7 +31,8 @@ describe('FxSDK - Edge Cases', () => {
       'should handle opening new position with high leverage',
       async () => {
         const result = await sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 10,
           inputTokenAddress: tokens.weth,
@@ -51,7 +52,8 @@ describe('FxSDK - Edge Cases', () => {
       'should handle very low slippage (0.1%)',
       async () => {
         const result = await sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 2,
           inputTokenAddress: tokens.weth,
@@ -69,7 +71,8 @@ describe('FxSDK - Edge Cases', () => {
       'should handle high slippage (5%)',
       async () => {
         const result = await sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 2,
           inputTokenAddress: tokens.weth,
@@ -89,7 +92,8 @@ describe('FxSDK - Edge Cases', () => {
       'should handle closing position completely',
       async () => {
         const result = await sdk.reducePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 1,
           outputTokenAddress: tokens.wstETH,
           amount: 1n * 10n ** 18n,
@@ -109,7 +113,8 @@ describe('FxSDK - Edge Cases', () => {
       'should handle native ETH address',
       async () => {
         const result = await sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 2,
           inputTokenAddress: tokens.eth, // Native ETH
@@ -127,7 +132,8 @@ describe('FxSDK - Edge Cases', () => {
       'should handle WETH address',
       async () => {
         const result = await sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 2,
           inputTokenAddress: tokens.weth,
@@ -147,7 +153,7 @@ describe('FxSDK - Edge Cases', () => {
       'should handle deposit with zero amount (only mint)',
       async () => {
         const result = await sdk.depositAndMint({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
           positionId: 1,
           depositTokenAddress: tokens.stETH,
           depositAmount: 0n,
@@ -164,7 +170,7 @@ describe('FxSDK - Edge Cases', () => {
       'should handle repay with zero amount (only withdraw)',
       async () => {
         const result = await sdk.repayAndWithdraw({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
           positionId: 1,
           repayAmount: 0n,
           withdrawAmount: 1n * 10n ** 18n,

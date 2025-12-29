@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { FxSdk } from '../src/core'
-import { PoolName } from '../src/types/pool'
 import { tokens } from '../src/configs/tokens'
 
 describe('FxSDK - Transaction Structure', () => {
@@ -12,7 +11,8 @@ describe('FxSDK - Transaction Structure', () => {
       'should return correct transaction structure',
       async () => {
         const result = await sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 3,
           inputTokenAddress: tokens.weth,
@@ -61,7 +61,8 @@ describe('FxSDK - Transaction Structure', () => {
       'should include approve transactions when needed',
       async () => {
         const result = await sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 3,
           inputTokenAddress: tokens.weth,
@@ -86,7 +87,8 @@ describe('FxSDK - Transaction Structure', () => {
       'should return correct transaction structure',
       async () => {
         const result = await sdk.reducePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 1,
           outputTokenAddress: tokens.wstETH,
           amount: 1n * 10n ** 17n,
@@ -108,7 +110,8 @@ describe('FxSDK - Transaction Structure', () => {
       'should return correct transaction structure',
       async () => {
         const result = await sdk.adjustPositionLeverage({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 1,
           leverage: 3,
           slippage: 1,
@@ -128,7 +131,7 @@ describe('FxSDK - Transaction Structure', () => {
       'should return correct transaction structure',
       async () => {
         const result = await sdk.depositAndMint({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
           positionId: 1,
           depositTokenAddress: tokens.stETH,
           depositAmount: 1n * 10n ** 18n,
@@ -149,7 +152,7 @@ describe('FxSDK - Transaction Structure', () => {
       'should return correct transaction structure',
       async () => {
         const result = await sdk.repayAndWithdraw({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
           positionId: 1,
           repayAmount: 1000n * 10n ** 18n,
           withdrawAmount: 1n * 10n ** 18n,

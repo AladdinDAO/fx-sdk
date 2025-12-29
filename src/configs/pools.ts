@@ -5,6 +5,10 @@ import { PoolName } from '@/types'
 export const INT_MIN =
   '57896044618658097711785492504343953926634992332820282019728792003956564819968'
 
+const getGraphUrl = (name: string) => {
+  return `https://api.studio.thegraph.com/query/43247/${name}/version/latest`
+}
+
 export const pools = {
   wstETH: {
     isShort: false,
@@ -26,6 +30,7 @@ export const pools = {
     minPrecision: 1e14,
     precision: 1e18,
     creditNoteSymbol: 'fxETH',
+    graphUrl: getGraphUrl('fx-v2-wsteth'),
   },
   WBTC: {
     isShort: false,
@@ -47,6 +52,7 @@ export const pools = {
     minPrecision: 1e12,
     precision: 1e8,
     creditNoteSymbol: 'fxBTC',
+    graphUrl: getGraphUrl('fx-v2-wbtc'),
   },
   wstETH_short: {
     isShort: true,
@@ -68,6 +74,7 @@ export const pools = {
     minPrecision: 1e14,
     precision: 1e18,
     creditNoteSymbol: 'fxETH',
+    graphUrl: getGraphUrl('fx-v2-wsteth-short'),
   },
   WBTC_short: {
     isShort: true,
@@ -89,5 +96,6 @@ export const pools = {
     minPrecision: 1e12,
     precision: 1e8,
     creditNoteSymbol: 'fxBTC',
+    graphUrl: getGraphUrl('fx-v2-wbtc-short'),
   },
 }

@@ -1,6 +1,6 @@
 # FX SDK
 
-FX Protocol SDK is a TypeScript/JavaScript SDK for interacting with the FX Protocol. It provides comprehensive functionality for creating and managing leveraged positions.
+FX Protocol SDK is a TypeScript SDK for interacting with the FX Protocol. It provides comprehensive functionality for creating and managing leveraged positions.
 
 ## Installation
 
@@ -21,7 +21,7 @@ import { FxSdk } from 'fx-sdk'
 import type { FxSdkConfig } from 'fx-sdk'
 ```
 
-If you need `PoolName` and `tokens` constants, you may need to import them from sub-paths, or define them directly in your code (see examples below).
+If you need `tokens` constants, you may need to import them from sub-paths, or define them directly in your code (see examples below).
 
 ## Quick Start
 
@@ -47,30 +47,11 @@ Open a new position or add to an existing position:
 ```typescript
 import { FxSdk } from 'fx-sdk'
 
-// Define PoolName (if not exported from SDK)
-const PoolName = {
-  wstETH: 'wstETH',
-  WBTC: 'WBTC',
-  wstETH_short: 'wstETH_short',
-  WBTC_short: 'WBTC_short',
-} as const
-
-// Define common token addresses
-const tokens = {
-  fxUSD: '0x085780639cc2cacd35e474e71f4d000e2405d8f6',
-  wstETH: '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
-  WBTC: '0x2260fac5e5542a773aa44fbcfedf7c193bc2c599',
-  eth: '0x0000000000000000000000000000000000000000',
-  weth: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-  usdc: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
-  usdt: '0xdac17f958d2ee523a2206206994597c13d831ec7',
-  stETH: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
-}
-
 const sdk = new FxSdk()
 
 const result = await sdk.increasePosition({
-  poolName: PoolName.wstETH, // or PoolName.WBTC, PoolName.wstETH_short, PoolName.WBTC_short
+  market: 'ETH', // 'ETH' or 'BTC'
+  type: 'long',  // 'long' or 'short'
   positionId: 0, // 0 means open new position, > 0 means existing position ID
   leverage: 3, // Leverage multiplier
   inputTokenAddress: tokens.weth, // Input token address
@@ -92,13 +73,32 @@ const result = await sdk.increasePosition({
 // - txs: Transaction array (contains approve and trade transactions with nonce set)
 ```
 
+### Get Positions
+
+Get all positions for a user in a specific market and position type:
+
+```typescript
+const positions = await sdk.getPositions({
+  userAddress: '0x...',
+  market: 'ETH', // 'ETH' or 'BTC'
+  type: 'long',  // 'long' or 'short'
+})
+
+// positions is an array of position info objects, each containing:
+// - rawColls: bigint - Raw collateral amount
+// - rawDebts: bigint - Raw debt amount
+// - currentLeverage: number - Current leverage multiplier
+// - lsdLeverage: number - LSD leverage multiplier
+```
+
 ### Reduce Position
 
 Reduce or close a position:
 
 ```typescript
 const result = await sdk.reducePosition({
-  poolName: PoolName.wstETH,
+  market: 'ETH', // 'ETH' or 'BTC'
+  type: 'long',  // 'long' or 'short'
   positionId: 706, // Existing position ID
   outputTokenAddress: tokens.wstETH, // Output token address
   amount: 30000000000000000n, // Amount to reduce (wei units)
@@ -114,7 +114,8 @@ Adjust the leverage multiplier of an existing position:
 
 ```typescript
 const result = await sdk.adjustPositionLeverage({
-  poolName: PoolName.wstETH,
+  market: 'ETH', // 'ETH' or 'BTC'
+  type: 'long',  // 'long' or 'short'
   positionId: 706,
   leverage: 3, // New leverage multiplier
   slippage: 1,
@@ -128,7 +129,7 @@ Deposit collateral to a position and mint fxUSD:
 
 ```typescript
 const result = await sdk.depositAndMint({
-  poolName: PoolName.wstETH,
+  market: 'ETH', // 'ETH' or 'BTC' (only supports long positions)
   positionId: 706,
   depositTokenAddress: tokens.stETH, // Deposit token address
   depositAmount: 1000000000000000000n, // Deposit amount (1 ETH)
@@ -143,7 +144,7 @@ Repay debt and withdraw collateral:
 
 ```typescript
 const result = await sdk.repayAndWithdraw({
-  poolName: PoolName.wstETH,
+  market: 'ETH', // 'ETH' or 'BTC' (only supports long positions)
   positionId: 706,
   repayAmount: 500000000000000000000n, // Amount of fxUSD to repay
   withdrawAmount: 200000000000000000n, // Amount of collateral to withdraw
@@ -152,14 +153,16 @@ const result = await sdk.repayAndWithdraw({
 })
 ```
 
-## Supported Pools
+## Supported Markets
 
-The SDK supports the following pools (using `PoolName` enum):
+The SDK supports the following markets and position types:
 
-- `PoolName.wstETH` - wstETH long pool
-- `PoolName.WBTC` - WBTC long pool
-- `PoolName.wstETH_short` - wstETH short pool
-- `PoolName.WBTC_short` - WBTC short pool
+- **ETH Market**:
+  - `market: 'ETH', type: 'long'` - wstETH long pool
+  - `market: 'ETH', type: 'short'` - wstETH short pool
+- **BTC Market**:
+  - `market: 'BTC', type: 'long'` - WBTC long pool
+  - `market: 'BTC', type: 'short'` - WBTC short pool
 
 ## Supported Tokens
 
@@ -209,6 +212,18 @@ for (const route of result.routes) {
 
 ## Type Definitions
 
+### Market
+
+```typescript
+type Market = 'ETH' | 'BTC'
+```
+
+### PositionType
+
+```typescript
+type PositionType = 'long' | 'short'
+```
+
 ### FxSdkConfig
 
 ```typescript
@@ -222,7 +237,8 @@ interface FxSdkConfig {
 
 ```typescript
 interface IncreasePositionRequest {
-  poolName: PoolName
+  market: Market            // 'ETH' or 'BTC'
+  type: PositionType        // 'long' or 'short'
   positionId: number        // 0 means open new position, > 0 means existing position ID
   leverage: number          // Leverage multiplier
   inputTokenAddress: string // Input token address
@@ -237,7 +253,8 @@ interface IncreasePositionRequest {
 
 ```typescript
 interface ReducePositionRequest {
-  poolName: PoolName
+  market: Market            // 'ETH' or 'BTC'
+  type: PositionType        // 'long' or 'short'
   positionId: number
   outputTokenAddress: string // Output token address
   amount: bigint            // Amount to reduce (wei units)
@@ -252,7 +269,8 @@ interface ReducePositionRequest {
 
 ```typescript
 interface AdjustPositionLeverageRequest {
-  poolName: PoolName
+  market: Market            // 'ETH' or 'BTC'
+  type: PositionType        // 'long' or 'short'
   positionId: number
   leverage: number    // New leverage multiplier
   slippage: number
@@ -261,10 +279,31 @@ interface AdjustPositionLeverageRequest {
 }
 ```
 
+### GetPositionsRequest
+
+```typescript
+interface GetPositionsRequest {
+  userAddress: string  // User address
+  market: Market       // 'ETH' or 'BTC'
+  type: PositionType   // 'long' or 'short'
+}
+```
+
+### PositionInfo
+
+```typescript
+interface PositionInfo {
+  rawColls: bigint      // Raw collateral amount
+  rawDebts: bigint      // Raw debt amount
+  currentLeverage: number  // Current leverage multiplier
+  lsdLeverage: number   // LSD leverage multiplier
+}
+```
+
 ### DepositAndMintRequest 
 ```typescript
 interface DepositAndMintRequest {
-  poolName: PoolName
+  market: Market            // 'ETH' or 'BTC' (only supports long positions)
   positionId: number
   userAddress: string
   depositTokenAddress: string
@@ -276,7 +315,7 @@ interface DepositAndMintRequest {
 ### RepayAndWithdrawRequest
 ```typescript
 export interface RepayAndWithdrawRequest {
-  poolName: PoolName
+  market: Market            // 'ETH' or 'BTC' (only supports long positions)
   positionId: number
   userAddress: string
   repayAmount: bigint
@@ -308,21 +347,6 @@ export interface RepayAndWithdrawRequest {
 ```typescript
 import { FxSdk } from 'fx-sdk'
 
-// Define token addresses (you can create your own tokens constant)
-const tokens = {
-  weth: '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2',
-  wstETH: '0x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0',
-  // ... other tokens
-}
-
-// Define PoolName enum values (if not exported from SDK)
-const PoolName = {
-  wstETH: 'wstETH',
-  WBTC: 'WBTC',
-  wstETH_short: 'wstETH_short',
-  WBTC_short: 'WBTC_short',
-} as const
-
 async function openPosition() {
   const sdk = new FxSdk({
     rpcUrl: 'https://eth.llamarpc.com',
@@ -331,7 +355,8 @@ async function openPosition() {
 
   try {
     const result = await sdk.increasePosition({
-      poolName: PoolName.wstETH,
+      market: 'ETH',
+      type: 'long',
       positionId: 0, // Open new position
       leverage: 3,
       inputTokenAddress: tokens.weth,

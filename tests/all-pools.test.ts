@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { FxSdk } from '../src/core'
-import { PoolName } from '../src/types/pool'
 import { tokens } from '../src/configs/tokens'
 
 describe('FxSDK - All Pool Types', () => {
@@ -12,7 +11,8 @@ describe('FxSDK - All Pool Types', () => {
       'should increase position for WBTC long',
       async () => {
         const result = await sdk.increasePosition({
-          poolName: PoolName.WBTC,
+          market: 'BTC',
+          type: 'long',
           positionId: 0,
           leverage: 2,
           inputTokenAddress: tokens.usdc,
@@ -33,7 +33,8 @@ describe('FxSDK - All Pool Types', () => {
       'should reduce position for WBTC long',
       async () => {
         const result = await sdk.reducePosition({
-          poolName: PoolName.WBTC,
+          market: 'BTC',
+          type: 'long',
           positionId: 1,
           outputTokenAddress: tokens.usdc,
           amount: 1000n * 10n ** 6n,
@@ -52,7 +53,8 @@ describe('FxSDK - All Pool Types', () => {
       'should increase position for WBTC short',
       async () => {
         const result = await sdk.increasePosition({
-          poolName: PoolName.WBTC_short,
+          market: 'BTC',
+          type: 'short',
           positionId: 0,
           leverage: 2,
           inputTokenAddress: tokens.usdc,
@@ -71,7 +73,8 @@ describe('FxSDK - All Pool Types', () => {
       'should adjust leverage for WBTC short',
       async () => {
         const result = await sdk.adjustPositionLeverage({
-          poolName: PoolName.WBTC_short,
+          market: 'BTC',
+          type: 'short',
           positionId: 1,
           leverage: 2,
           slippage: 1,
@@ -90,7 +93,8 @@ describe('FxSDK - All Pool Types', () => {
       async () => {
         // Test with WETH
         const result1 = await sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 2,
           inputTokenAddress: tokens.weth,
@@ -102,7 +106,8 @@ describe('FxSDK - All Pool Types', () => {
 
         // Test with USDC
         const result2 = await sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 2,
           inputTokenAddress: tokens.usdc,

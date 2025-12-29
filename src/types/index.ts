@@ -1,6 +1,10 @@
 export * from '@/types/pool'
 import { ROUTE_TYPES } from '@/core/aggregators'
-import { PoolName } from '@/types/pool'
+
+export type Market = 'ETH' | 'BTC'
+export type PositionType = 'long' | 'short'
+
+export type TokenSymbol = 'ETH' | 'wstETH' | 'stETH' | 'WBTC' | 'USDC' | 'USDT' | 'FXUSD'
 
 export interface PriceOracle {
   anchorPrice: bigint
@@ -9,7 +13,8 @@ export interface PriceOracle {
 }
 
 export interface PositionRequest {
-  poolName: PoolName
+  market: Market
+  type: PositionType
   positionId: number
   userAddress: string
   slippage: number
@@ -33,7 +38,7 @@ export interface AdjustPositionLeverageRequest extends PositionRequest {
 }
 
 export interface DepositAndMintRequest {
-  poolName: PoolName
+  market: Market
   positionId: number
   userAddress: string
   depositTokenAddress: string
@@ -42,7 +47,7 @@ export interface DepositAndMintRequest {
 }
 
 export interface RepayAndWithdrawRequest {
-  poolName: PoolName
+  market: Market
   positionId: number
   userAddress: string
   repayAmount: bigint

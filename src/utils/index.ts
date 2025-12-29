@@ -1,4 +1,6 @@
+import { PoolName } from '@/types/pool'
 import { Decimal } from 'decimal.js'
+import { Market, PositionType } from '@/types'
 
 export { Decimal }
 
@@ -62,4 +64,18 @@ export const getEncodeMiscDataWithSlippage = (targetDebtRatio: string, slippage:
   )
 
   return getEncodeMiscData(minDebtRatio!, maxDebtRatio!)
+}
+
+export const getPoolName = (market: Market, type: PositionType) => {
+  if (type !== 'long' && type !== 'short') {
+    throw new Error('Invalid type')
+  }
+  switch (market) {
+    case 'ETH':
+      return type === 'long' ? PoolName.wstETH : PoolName.wstETH_short
+    case 'BTC':
+      return type === 'long' ? PoolName.WBTC : PoolName.WBTC_short
+    default:
+      throw new Error('Invalid market')
+  }
 }

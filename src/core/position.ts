@@ -2,7 +2,7 @@ import AFPoolAbi from '@/abis/AFPool.json'
 import { AdjustPositionLeverageRequest, ConvertData, DepositAndMintRequest, IncreasePositionRequest, PoolInfo, ReducePositionRequest, RepayAndWithdrawRequest } from '@/types'
 import { FxRoute } from '@/core/aggregators/fxRoute'
 import { tokens } from '@/configs/tokens'
-import { cBN, getLeverage, getLTV } from '@/utils'
+import { cBN, getLeverage } from '@/utils'
 import { getClient } from '@/core/client'
 import { openOrAddFlashLoanQuote, closeOrRemoveFlashLoanQuote, downLeverageQuote } from '@/utils/longFlashLoan'
 import PositionOperateFlashLoanFacetV2Abi from '@/abis/PositionOperateFlashLoanFacetV2.json'
@@ -491,7 +491,7 @@ export class Position {
     depositAmount,
     mintAmount,
   }: DepositAndMintRequest) {
-    const { precision, poolAddress, deltaCollAddress, minPrice, anchorPrice, rateRes } = this.poolInfo
+    const { precision, poolAddress, deltaCollAddress, minPrice, rateRes } = this.poolInfo
 
     const positionInfo = await this.getPositionInfo()
     const { rawColls, rawDebts } = positionInfo
@@ -533,8 +533,6 @@ export class Position {
     const colls = cBN(rawColls)
       .plus(cBN(_deltaCollAmount).div(precision).times(rateRes))
       .toFixed(0)
-
-    const ltv = getLTV(debts, colls, cBN(anchorPrice).div(PRECISION))
 
     const minOut = cBN(_deltaCollAmount)
       .times(100 - 0.1)
@@ -634,7 +632,7 @@ export class Position {
     withdrawAmount,
     withdrawTokenAddress,
   }: RepayAndWithdrawRequest) {
-    const { precision, deltaCollAddress, rateRes, minPrice, poolAddress, anchorPrice, repayFeeRatio } = this.poolInfo
+    const { precision, deltaCollAddress, rateRes, minPrice, poolAddress, repayFeeRatio } = this.poolInfo
 
     const positionInfo = await this.getPositionInfo()
     const { rawColls, rawDebts } = positionInfo
@@ -699,8 +697,6 @@ export class Position {
 
     const debts = cBN(rawDebts).minus(deltaDebt).toFixed(0)
     const colls = cBN(rawColls).minus(withdrawCollAmount).toFixed(0)
-
-    const ltv = getLTV(debts, colls, cBN(anchorPrice).div(PRECISION))
 
     const minOut = cBN(_toAmount)
       .times(100 - 0.1)

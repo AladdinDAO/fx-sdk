@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { FxSdk } from '../src/core'
-import { PoolName } from '../src/types/pool'
 import { tokens } from '../src/configs/tokens'
 
 describe('FxSDK - Input Validation', () => {
@@ -11,7 +10,8 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for invalid amount (0)', async () => {
       await expect(
         sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 3,
           inputTokenAddress: tokens.weth,
@@ -25,7 +25,8 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for invalid amount (negative)', async () => {
       await expect(
         sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 3,
           inputTokenAddress: tokens.weth,
@@ -39,7 +40,8 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for invalid token address', async () => {
       await expect(
         sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 3,
           inputTokenAddress: 'invalid-address',
@@ -53,7 +55,8 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for invalid slippage (0)', async () => {
       await expect(
         sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 3,
           inputTokenAddress: tokens.weth,
@@ -67,7 +70,8 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for invalid slippage (100)', async () => {
       await expect(
         sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 3,
           inputTokenAddress: tokens.weth,
@@ -81,7 +85,8 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for invalid leverage (0)', async () => {
       await expect(
         sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 0,
           inputTokenAddress: tokens.weth,
@@ -95,7 +100,8 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for invalid position ID (negative)', async () => {
       await expect(
         sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: -1,
           leverage: 3,
           inputTokenAddress: tokens.weth,
@@ -109,7 +115,8 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for invalid user address', async () => {
       await expect(
         sdk.increasePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 0,
           leverage: 3,
           inputTokenAddress: tokens.weth,
@@ -119,27 +126,14 @@ describe('FxSDK - Input Validation', () => {
         })
       ).rejects.toThrow('User address is not a valid address')
     })
-
-    it('should throw error for invalid pool name', async () => {
-      await expect(
-        sdk.increasePosition({
-          poolName: 'InvalidPool' as PoolName,
-          positionId: 0,
-          leverage: 3,
-          inputTokenAddress: tokens.weth,
-          amount: 100000000000000000000n,
-          slippage: 1,
-          userAddress: validUserAddress,
-        })
-      ).rejects.toThrow('Pool name is not supported')
-    })
   })
 
   describe('reducePosition', () => {
     it('should throw error for invalid amount (0)', async () => {
       await expect(
         sdk.reducePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 1,
           outputTokenAddress: tokens.wstETH,
           amount: 0n,
@@ -152,7 +146,8 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for invalid token address', async () => {
       await expect(
         sdk.reducePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 1,
           outputTokenAddress: 'invalid-address',
           amount: 100000000000000000000n,
@@ -165,7 +160,8 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for invalid slippage', async () => {
       await expect(
         sdk.reducePosition({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 1,
           outputTokenAddress: tokens.wstETH,
           amount: 100000000000000000000n,
@@ -180,7 +176,8 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for invalid leverage (0)', async () => {
       await expect(
         sdk.adjustPositionLeverage({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 1,
           leverage: 0,
           slippage: 1,
@@ -192,7 +189,8 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for invalid slippage', async () => {
       await expect(
         sdk.adjustPositionLeverage({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
+          type: 'long',
           positionId: 1,
           leverage: 3,
           slippage: -1,
@@ -206,7 +204,7 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for negative deposit amount', async () => {
       await expect(
         sdk.depositAndMint({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
           positionId: 1,
           depositTokenAddress: tokens.stETH,
           depositAmount: -1n,
@@ -219,7 +217,7 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for negative mint amount', async () => {
       await expect(
         sdk.depositAndMint({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
           positionId: 1,
           depositTokenAddress: tokens.stETH,
           depositAmount: 1n * 10n ** 18n,
@@ -232,7 +230,7 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for invalid deposit token address', async () => {
       await expect(
         sdk.depositAndMint({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
           positionId: 1,
           depositTokenAddress: 'invalid-address',
           depositAmount: 1n * 10n ** 18n,
@@ -247,7 +245,7 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for negative repay amount', async () => {
       await expect(
         sdk.repayAndWithdraw({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
           positionId: 1,
           repayAmount: -1n,
           withdrawAmount: 1n * 10n ** 18n,
@@ -260,7 +258,7 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for negative withdraw amount', async () => {
       await expect(
         sdk.repayAndWithdraw({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
           positionId: 1,
           repayAmount: 1000n * 10n ** 18n,
           withdrawAmount: -1n,
@@ -273,7 +271,7 @@ describe('FxSDK - Input Validation', () => {
     it('should throw error for invalid withdraw token address', async () => {
       await expect(
         sdk.repayAndWithdraw({
-          poolName: PoolName.wstETH,
+          market: 'ETH',
           positionId: 1,
           repayAmount: 1000n * 10n ** 18n,
           withdrawAmount: 1n * 10n ** 18n,
