@@ -17,11 +17,11 @@ pnpm add fx-sdk
 The SDK's main entry point exports:
 
 ```typescript
-import { FxSdk } from 'fx-sdk'
+import { FxSdk, tokens } from 'fx-sdk'
 import type { FxSdkConfig } from 'fx-sdk'
 ```
 
-If you need `tokens` constants, you may need to import them from sub-paths, or define them directly in your code (see examples below).
+The `tokens` object contains common token addresses on Ethereum mainnet, so you don't need to define them yourself.
 
 ## Quick Start
 
@@ -96,6 +96,8 @@ const positions = await sdk.getPositions({
 Reduce or close a position:
 
 ```typescript
+import { FxSdk, tokens } from 'fx-sdk'
+
 const result = await sdk.reducePosition({
   market: 'ETH', // 'ETH' or 'BTC'
   type: 'long',  // 'long' or 'short'
@@ -113,6 +115,8 @@ const result = await sdk.reducePosition({
 Adjust the leverage multiplier of an existing position:
 
 ```typescript
+import { FxSdk, tokens } from 'fx-sdk'
+
 const result = await sdk.adjustPositionLeverage({
   market: 'ETH', // 'ETH' or 'BTC'
   type: 'long',  // 'long' or 'short'
@@ -128,6 +132,8 @@ const result = await sdk.adjustPositionLeverage({
 Deposit collateral to a position and mint fxUSD:
 
 ```typescript
+import { FxSdk, tokens } from 'fx-sdk'
+
 const result = await sdk.depositAndMint({
   market: 'ETH', // 'ETH' or 'BTC' (only supports long positions)
   positionId: 706,
@@ -143,6 +149,8 @@ const result = await sdk.depositAndMint({
 Repay debt and withdraw collateral:
 
 ```typescript
+import { FxSdk, tokens } from 'fx-sdk'
+
 const result = await sdk.repayAndWithdraw({
   market: 'ETH', // 'ETH' or 'BTC' (only supports long positions)
   positionId: 706,
@@ -345,7 +353,7 @@ export interface RepayAndWithdrawRequest {
 ### Complete Open Position Example
 
 ```typescript
-import { FxSdk } from 'fx-sdk'
+import { FxSdk, tokens } from 'fx-sdk'
 
 async function openPosition() {
   const sdk = new FxSdk({

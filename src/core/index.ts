@@ -86,8 +86,8 @@ export class FxSdk {
     const poolName = getPoolName(market, type)
 
     if (market === 'ETH') {
-      if (![tokens.stETH, tokens.weth, tokens.wstETH, tokens.usdc, tokens.usdt, tokens.fxUSD].includes(inputTokenAddress)) {
-        throw new Error('Input token address must be stETH, weth, wstETH, usdc, usdt or fxUSD')
+      if (![tokens.eth, tokens.stETH, tokens.weth, tokens.wstETH, tokens.usdc, tokens.usdt, tokens.fxUSD].includes(inputTokenAddress)) {
+        throw new Error('Input token address must be eth, stETH, weth, wstETH, usdc, usdt or fxUSD')
       }
     } else if (market === 'BTC') {
       if (![tokens.WBTC, tokens.usdc, tokens.usdt, tokens.fxUSD].includes(inputTokenAddress)) {
@@ -330,8 +330,8 @@ export class FxSdk {
     const poolName = getPoolName(market, 'long')
 
     if (market === 'ETH') {
-      if (![tokens.stETH, tokens.weth, tokens.wstETH].includes(withdrawTokenAddress)) {
-        throw new Error('Withdraw token address must be stETH, weth or wstETH')
+      if (![tokens.eth, tokens.stETH, tokens.weth, tokens.wstETH].includes(withdrawTokenAddress)) {
+        throw new Error('Withdraw token address must be eth, stETH, weth or wstETH')
       }
     } else if (market === 'BTC') {
       if (![tokens.WBTC].includes(withdrawTokenAddress)) {

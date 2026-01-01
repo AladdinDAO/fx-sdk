@@ -7,7 +7,6 @@ import { getClient } from '@/core/client'
 import { openOrAddFlashLoanQuote, closeOrRemoveFlashLoanQuote, downLeverageQuote } from '@/utils/longFlashLoan'
 import PositionOperateFlashLoanFacetV2Abi from '@/abis/PositionOperateFlashLoanFacetV2.json'
 import ShortPositionOperateFlashLoanFacetAbi from '@/abis/ShortPositionOperateFlashLoanFacet.json'
-import LongPositionEmergencyCloseFacetAbi from '@/abis/LongPositionEmergencyCloseFacet.json'
 import MultiPathConverterAbi from '@/abis/MultiPathConverter.json'
 import { encodeFunctionData } from 'viem'
 import { getDecimals, getNonce } from '@/utils/service'
@@ -337,7 +336,7 @@ export class Position {
         from: this.userAddress,
         to: contracts.Router_Diamond,
         data: encodeFunctionData({
-          abi: isShort ? ShortPositionOperateFlashLoanFacetAbi : LongPositionEmergencyCloseFacetAbi,
+          abi: isShort ? ShortPositionOperateFlashLoanFacetAbi : PositionOperateFlashLoanFacetV2Abi,
           functionName: isShort
             ? 'closeOrRemoveShortPositionFlashLoan'
             : 'closeOrRemovePositionFlashLoanV2',
@@ -742,7 +741,7 @@ export class Position {
 
     const approveTokenTx = await approveToken({
       tokenAddress: tokens.fxUSD,
-      amount: repayAmount,
+      amount: BigInt(payAmount),
       spender: contracts.FxMintRouter,
       userAddress: this.userAddress,
     })
