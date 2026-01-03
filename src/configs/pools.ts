@@ -6,7 +6,7 @@ export const INT_MIN =
   '57896044618658097711785492504343953926634992332820282019728792003956564819968'
 
 const getGraphUrl = (name: string) => {
-  return `https://api.studio.thegraph.com/query/43247/${name}/version/latest`
+  return `http://13.228.107.16:8000/subgraphs/name/${name}`
 }
 
 export const pools = {

@@ -20,10 +20,17 @@ export const contracts = {
   WstETHShortPool: "0x25707b9e6690B52C60aE6744d711cf9C1dFC1876",
   WBTCShortPool: "0xA0cC8162c523998856D59065fAa254F87D20A5b0",
 
-  PriceOracle_StETHPriceOracle: "0x0C5C61025f047cB7e3e85852dC8eAFd7b9a4Abfb",
-  PriceOracle_WBTCPriceOracle: "0xb3c90e64EB6f456A5F5C17Aa99b6aecA6f4a6390",
+  // PriceOracle_StETHPriceOracle: "0x0C5C61025f047cB7e3e85852dC8eAFd7b9a4Abfb",
+  // PriceOracle_WBTCPriceOracle: "0xb3c90e64EB6f456A5F5C17Aa99b6aecA6f4a6390",
+  // PriceOracle_InverseWstETHPriceOracle:
+  //   "0x222786833b5fd5eE21532d8b576391bAbeFdAAd1",
+  // PriceOracle_InverseWBTCPriceOracle:
+  //   "0x5d2c6215555B36889ef235c6d5cCDE22E9964e6a",
+  
+  PriceOracle_StETHPriceOracle: '0x8c5853cBb43f2E88Cd488723996FB13d400bdaAE',
+  PriceOracle_WBTCPriceOracle: '0xF9e7790c3E5D9909d874e4FFebEf03550F3Fec75',
   PriceOracle_InverseWstETHPriceOracle:
-    "0x222786833b5fd5eE21532d8b576391bAbeFdAAd1",
+    '0x0cA7128c9CA172D58818f5CA390326Fd5D6b193b',
   PriceOracle_InverseWBTCPriceOracle:
-    "0x5d2c6215555B36889ef235c6d5cCDE22E9964e6a",
+    '0xAf00aF3Cc7262bA127FC019d3d16ad20EdDFC611',
 };
