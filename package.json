@@ -24,7 +24,8 @@
     "example:reduce": "tsx example/reduce-position.ts",
     "example:positions": "tsx example/get-positions.ts",
     "example:deposit": "tsx example/deposit-and-mint.ts",
-    "example:repay": "tsx example/repay-and-withdraw.ts"
+    "example:repay": "tsx example/repay-and-withdraw.ts",
+    "example:adjust": "tsx example/adjust-position-leverage.ts"
   },
   "license": "MIT",
   "devDependencies": {

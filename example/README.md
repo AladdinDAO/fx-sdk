@@ -53,6 +53,9 @@ npm run example:deposit
 
 # Repay and withdraw
 npm run example:repay
+
+# Adjust position leverage
+npm run example:adjust
 ```
 
 ### Method 2: Using tsx directly
@@ -74,6 +77,9 @@ npx tsx example/deposit-and-mint.ts
 
 # Repay and withdraw
 npx tsx example/repay-and-withdraw.ts
+
+# Adjust position leverage
+npx tsx example/adjust-position-leverage.ts
 ```
 
 ## Available Scripts
@@ -154,6 +160,23 @@ npx tsx example/repay-and-withdraw.ts
 The script will:
 - Repay fxUSD debt
 - Withdraw collateral tokens
+
+### 6. adjust-position-leverage.ts
+
+Example script for adjusting the leverage of an existing position.
+
+```bash
+npm run example:adjust
+# or
+npx tsx example/adjust-position-leverage.ts
+```
+
+**Note:** You need to modify the `positionId` in the script to your actual position ID, or set it via the `POSITION_ID` environment variable.
+
+The script will:
+- Adjust the leverage of an existing position (increase or decrease)
+- Execute all required transactions sequentially
+- Display the new leverage after adjustment
 - Execute all required transactions sequentially
 
 ## Environment Variables
