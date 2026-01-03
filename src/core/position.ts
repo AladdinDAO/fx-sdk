@@ -91,6 +91,7 @@ export class Position {
     const currentLeverage = getLeverage(currentSize, debtUsd)
 
     const positionInfo = {
+      positionId: this.positionId,
       rawColls,
       rawDebts,
       currentLeverage,
