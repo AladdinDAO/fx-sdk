@@ -265,8 +265,8 @@ export class FxSdk {
     const poolName = getPoolName(market, 'long')
 
     if (market === 'ETH') {
-      if (![tokens.stETH, tokens.weth, tokens.wstETH].includes(depositTokenAddress)) {
-        throw new Error('Deposit token address must be stETH, weth or wstETH')
+      if (![tokens.eth, tokens.stETH, tokens.weth, tokens.wstETH].includes(depositTokenAddress)) {
+        throw new Error('Deposit token address must be eth, stETH, weth or wstETH')
       }
     } else if (market === 'BTC') {
       if (![tokens.WBTC].includes(depositTokenAddress)) {
