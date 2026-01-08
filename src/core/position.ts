@@ -783,7 +783,7 @@ export class Position {
       data: encodeFunctionData({
         abi: PositionOperateFacetAbi,
         functionName: isZapOut ? 'repayToLongAndZapOut' : 'repayToLong',
-        args: data,
+        args: data.filter(item => item !== null),
       }),
       value: 0n,
       nonce,
