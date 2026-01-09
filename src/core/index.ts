@@ -152,8 +152,12 @@ export class FxSdk {
     const poolName = getPoolName(market, type)
 
     if (market === 'ETH') {
-      if (![tokens.eth, tokens.stETH, tokens.weth, tokens.wstETH, tokens.usdc, tokens.usdt, tokens.fxUSD].includes(outputTokenAddress)) {
-        throw new Error('Output token address must be eth, stETH, weth, wstETH, usdc, usdt or fxUSD')
+      const tokenAddresses = [tokens.eth, tokens.weth, tokens.wstETH, tokens.usdc, tokens.usdt, tokens.fxUSD]
+      if (type === 'long') {
+        tokenAddresses.push(tokens.stETH)
+      }
+      if (!tokenAddresses.includes(outputTokenAddress)) {
+        throw new Error(`Output token address must be eth, ${type === 'long' ? 'stETH,' : ''} wstETH, usdc, usdt or fxUSD`)
       }
     } else if (market === 'BTC') {
       if (![tokens.WBTC, tokens.usdc, tokens.usdt, tokens.fxUSD].includes(outputTokenAddress)) {
