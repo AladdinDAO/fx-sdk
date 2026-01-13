@@ -5,24 +5,6 @@ const ROUTER = {
   stETH: {
     fromAddress: tokens.stETH,
     routers: {
-      [tokens.weth]: [
-        tokens.weth,
-        ['0x277090c5ae6b80a3c525f09d7ae464a8fa83d9c08804'],
-      ],
-      [tokens.usdc]: [
-        tokens.usdc,
-        [
-          '0x277090c5ae6b80a3c525f09d7ae464a8fa83d9c08804',
-          '0x49fe1afc5df753cd252e1068dfa0428d3755b20a6c08',
-        ],
-      ],
-      [tokens.usdt]: [
-        tokens.usdt,
-        [
-          '0x277090c5ae6b80a3c525f09d7ae464a8fa83d9c08804',
-          '0x4bd7d6e5d89150b5caa781bc12012fe06ea8578ad008',
-        ],
-      ],
       [tokens.wstETH]: [
         tokens.wstETH,
         ['0x1fce71607d656d4f172c66f42cfe369b24d78b2810a'],
@@ -48,7 +30,6 @@ const ROUTER = {
       ],
       [tokens.usdc]: [
         tokens.usdc,
-        // ["wstETH/stETH_Lido","stETH/WETH_CrvSB","WETH/USDC_V3Uni500"]
         [
           '0x01fce71607d656d4f172c66f42cfe369b24d78b2820a',
           '0x277090c5ae6b80a3c525f09d7ae464a8fa83d9c08804',
@@ -58,12 +39,9 @@ const ROUTER = {
       ],
       [tokens.usdt]: [
         tokens.usdt,
-        // ["wstETH/stETH_Lido","stETH/WETH_CrvSB","WETH/USDT_V3Uni500"]
-        // ["wstETH/stETH_Lido","stETH/WETH_CrvSB","WETH/USDC_V3Uni500", "USDC/USDT_CrvSB"]
         [
           '0x01fce71607d656d4f172c66f42cfe369b24d78b2820a',
           '0x277090c5ae6b80a3c525f09d7ae464a8fa83d9c08804',
-          // '0x040007d046e057bee3d604652b9e401b493836052dda5fd801',
           '0x07d2239a830b7749bfbad93c0e68b104a5bf2cfd590001',
           '0x022afaf111e0b1f6c2869832dbfa5f42d20c0cbfc71c04',
         ],
@@ -146,7 +124,6 @@ const ROUTER = {
     routers: {
       [tokens.wstETH]: [
         tokens.wstETH,
-        // ["USDT/USDC_CrvSB","USDC/WETH_V3Uni500","WETH/stETH_Lido","stETH/wstETH_Lido"]
         [
           '0x014afaf111e0b1f6c2869832dbfa5f42d20c0cbfc71c04',
           '0x040007d2239a830b7749bfbad93c0e68b104a5bf2cfd590001',
@@ -162,7 +139,6 @@ const ROUTER = {
       ],
       [tokens.WBTC]: [
         tokens.WBTC,
-        // ["USDT/USDC_CrvSB","USDC/WBTC_V3Uni3000"]
         [
           '0x014afaf111e0b1f6c2869832dbfa5f42d20c0cbfc71c04',
           '0x2ee266b2329c21fe928a87ed8d5c9a659688052af0d401',
@@ -184,13 +160,11 @@ const ROUTER = {
     routers: {
       [tokens.usdc]: [
         tokens.usdc,
-        // ["WBTC/USDC_V3Uni3000"]
         ['0x04002ee266b2329c21fe928a87ed8d5c9a659688052af0d401'],
         1048575n + (1n << 20n),
       ],
       [tokens.usdt]: [
         tokens.usdt,
-        // ["WBTC/USDC_V3Uni3000","USDC/USDT_CrvSB"]
         [
           '0x04002ee266b2329c21fe928a87ed8d5c9a659688052af0d401',
           '0x022afaf111e0b1f6c2869832dbfa5f42d20c0cbfc71c04',
@@ -225,7 +199,6 @@ const ROUTER = {
       ],
       [tokens.wstETH]: [
         tokens.wstETH,
-        // ["fxUSD/USDC_CrvSN193","USDC/WETH_V3Uni500","WETH/stETH_Lido","stETH/wstETH_Lido"]
         [
           '0x254062fa20b733978fcbcec244eb8825ae6cfed87c0c',
           '0x040007d2239a830b7749bfbad93c0e68b104a5bf2cfd590001',
@@ -244,7 +217,6 @@ const ROUTER = {
       ],
       [tokens.WBTC]: [
         tokens.WBTC,
-        // ["fxUSD/USDC_CrvSN193","USDC/WBTC_V3Uni3000"]
         [
           '0x254062fa20b733978fcbcec244eb8825ae6cfed87c0c',
           '0x2ee266b2329c21fe928a87ed8d5c9a659688052af0d401',
@@ -259,7 +231,7 @@ const ROUTER_v3 = cloneDeep(ROUTER)
 
 ROUTER_v3.USDC.routers[tokens.WBTC] = [
   tokens.WBTC,
-  ['0x07d269dc8063ef5dff34b49595f97151eebfcff5f45801'], // V3Uni500
+  ['0x07d269dc8063ef5dff34b49595f97151eebfcff5f45801'],
   1048575n + (1n << 20n),
 ]
 

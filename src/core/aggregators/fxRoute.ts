@@ -3,7 +3,7 @@ import { getZapRoutes } from '@/utils/zapRoute'
 import MultiPathConverterAbi from '@/abis/MultiPathConverter.json'
 import { encodeFunctionData } from 'viem'
 import { Aggregator, ROUTE_TYPES } from '@/core/aggregators/types'
-import { callQueryConvert } from '@/utils/call'
+import { getQueryConvert } from '@/utils/service'
 
 export class FxRoute extends Aggregator {
   private isV3: boolean
@@ -32,7 +32,7 @@ export class FxRoute extends Aggregator {
       throw new Error(`Convert data not found for ${src} to ${dst}`)
     }
 
-    const outAmount = await callQueryConvert(amount, convertData)
+    const outAmount = await getQueryConvert(amount, convertData)
 
     return {
       name: this.name,

@@ -19,13 +19,21 @@
     "clean": "rm -rf dist",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "example:increase": "tsx example/increase-position.ts",
+    "example:reduce": "tsx example/reduce-position.ts",
+    "example:positions": "tsx example/get-positions.ts",
+    "example:deposit": "tsx example/deposit-and-mint.ts",
+    "example:repay": "tsx example/repay-and-withdraw.ts",
+    "example:adjust": "tsx example/adjust-position-leverage.ts"
   },
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^25.0.3",
     "@vitest/coverage-v8": "^4.0.15",
+    "dotenv": "^16.4.5",
     "tsup": "^8.5.1",
+    "tsx": "^4.19.2",
     "typescript": "^5.9.3",
     "vitest": "^4.0.15"
   },

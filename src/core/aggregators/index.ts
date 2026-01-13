@@ -9,6 +9,7 @@ import { contracts } from '@/configs/contracts'
 import { batchedMulticall, MulticallContractCall } from '@/utils/multicall'
 import { Abi } from 'viem'
 import { QuoteResult, RouteResult } from './types'
+import { ConvertData } from '@/types'
 import { tokens } from '@/configs/tokens'
 import { getZapRoutes } from '@/utils/zapRoute'
 export * from './types'
@@ -17,7 +18,7 @@ const searchAmount = async (
   left: string,
   right: string,
   expect: string,
-  routes: { encoding: bigint; routes: string[] },
+  convertData: ConvertData,
   _precision: number
 ) => {
   let times = 0
@@ -33,7 +34,7 @@ const searchAmount = async (
         address: contracts.TokenConverter_MultiPathConverter as `0x${string}`,
         abi: MultiPathConverterAbi as Abi,
         functionName: 'queryConvert',
-        args: [amount, routes.encoding, routes.routes],
+        args: [amount, convertData.encoding, convertData.routes],
       })
     }
     if (times === 10) {
@@ -41,7 +42,6 @@ const searchAmount = async (
         'Exceeds the maximum trading range. Please lower the position size.'
       )
     }
-    console.log('searchAmount--times-----', times)
     times++
     const results = (await batchedMulticall(getClient(), calls)) as {
       result: bigint
@@ -235,141 +235,72 @@ export const getFxUSDByBorrowAmount = async ({
   return selectBest(results, true)
 }
 
-/*
 export const getBorrowByFxUSDAmount = async ({
-  hintWstETHToBorrow,
+  hintToBorrow,
   fxUSDAmount,
-  baseSymbol,
+  baseTokenAddress,
   precision,
+}: {
+  hintToBorrow: string
+  fxUSDAmount: string
+  baseTokenAddress: string
+  precision: number
 }) => {
-  const selected = []
-  const results = []
+  const results: QuoteResult[] = []
 
   const zapRouteData = getZapRoutes({
-    from: baseSymbol,
-    to: 'fxUSD',
+    fromTokenAddress: baseTokenAddress,
+    toTokenAddress: tokens.fxUSD,
   })
 
-  const res = await withRetry(async () => {
+try{
     const [_wstETHToBorrow] = await searchAmount(
-      cBN(hintWstETHToBorrow).times(0.5).toFixed(0, 1),
-      cBN(hintWstETHToBorrow).times(2).toFixed(0, 1),
+      cBN(hintToBorrow).times(0.5).toFixed(0, 1),
+      cBN(hintToBorrow).times(2).toFixed(0, 1),
       fxUSDAmount,
       zapRouteData,
-      cBN('0.00001').times(precision).toFixed(0, 1)
+      cBN('0.00001').times(precision).toNumber()
     )
-    selected.push({ name: ROUTE_TYPES.FX_ROUTE })
-    results.push({ src: BigInt(_wstETHToBorrow), dst: BigInt(fxUSDAmount) })
-  }, 1)
-  if (res && res.err && baseSymbol !== 'WBTC') {
-    throw Error(
-      JSON.stringify({
-        message:
-          'Exceeds the maximum trading range. Please lower the position size.',
-        code: 509,
-      })
-    )
+    results.push({
+      name: ROUTE_TYPES.FX_ROUTE,
+      src: BigInt(_wstETHToBorrow ?? 0n),
+      dst: BigInt(fxUSDAmount),
+    })
+  } catch (err) {
+    // do nothing
   }
 
-  if (baseSymbol === 'WBTC') {
+  if (baseTokenAddress === tokens.WBTC) {
     const zapRouteData2 = getZapRoutes({
-      from: baseSymbol,
-      to: 'fxUSD',
+      fromTokenAddress: baseTokenAddress,
+      toTokenAddress: tokens.fxUSD,
       isV3: true,
     })
-    const res2 = await withRetry(async () => {
+
+    try{
       const [_wstETHToBorrow] = await searchAmount(
-        cBN(hintWstETHToBorrow).times(0.5).toFixed(0, 1),
-        cBN(hintWstETHToBorrow).times(2).toFixed(0, 1),
+        cBN(hintToBorrow).times(0.5).toFixed(0, 1),
+        cBN(hintToBorrow).times(2).toFixed(0, 1),
         fxUSDAmount,
         zapRouteData2,
-        cBN('0.00001').times(precision).toFixed(0, 1)
+        cBN('0.00001').times(precision).toNumber()
       )
-      selected.push({ name: ROUTE_TYPES.FX_ROUTE_V3 })
       results.push({
-        src: BigInt(_wstETHToBorrow),
+        name: ROUTE_TYPES.FX_ROUTE_V3,
+        src: BigInt(_wstETHToBorrow ?? 0n),
         dst: BigInt(fxUSDAmount),
       })
-    }, 1)
-
-    if (res2 && res2.err && selected.length === 0) {
-      throw Error(
-        JSON.stringify({
-          message:
-            'Exceeds the maximum trading range. Please lower the position size.',
-          code: 509,
-        })
-      )
+    } catch (err) {
+      // do nothing
     }
   }
 
-  return selectBest(selected, results, true)
-}
-
-export const getBorrowByUSDCAmount = async ({
-  hintWstETHToBorrow,
-  usdcAmount,
-  baseSymbol,
-  precision,
-}) => {
-  const selected = []
-  const results = []
-
-  const zapRouteData = getZapRoutes({
-    from: baseSymbol,
-    to: 'USDC',
-  })
-
-  const res = await withRetry(async () => {
-    const [_wstETHToBorrow] = await searchAmount(
-      cBN(hintWstETHToBorrow).times(0.5).toFixed(0, 1),
-      cBN(hintWstETHToBorrow).times(2).toFixed(0, 1),
-      usdcAmount,
-      zapRouteData,
-      cBN('0.00001').times(precision).toFixed(0, 1)
-    )
-    selected.push({ name: ROUTE_TYPES.FX_ROUTE })
-    results.push({ src: BigInt(_wstETHToBorrow), dst: BigInt(usdcAmount) })
-  }, 1)
-  if (res && res.err && baseSymbol !== 'WBTC') {
+  if (results.length === 0) {
     throw Error(
-      JSON.stringify({
-        message:
-          'Exceeds the maximum trading range. Please lower the position size.',
-        code: 509,
-      })
+      'Exceeds the maximum trading range. Please lower the position size.'
     )
   }
 
-  if (baseSymbol === 'WBTC') {
-    const zapRouteData2 = getZapRoutes({
-      from: baseSymbol,
-      to: 'USDC',
-      isV3: true,
-    })
-    const res2 = await withRetry(async () => {
-      const [_wstETHToBorrow] = await searchAmount(
-        cBN(hintWstETHToBorrow).times(0.5).toFixed(0, 1),
-        cBN(hintWstETHToBorrow).times(2).toFixed(0, 1),
-        usdcAmount,
-        zapRouteData2,
-        cBN('0.00001').times(precision).toFixed(0, 1)
-      )
-      selected.push({ name: ROUTE_TYPES.FX_ROUTE_V3 })
-      results.push({ src: BigInt(_wstETHToBorrow), dst: BigInt(usdcAmount) })
-    }, 1)
-
-    if (res2 && res2.err && selected.length === 0) {
-      throw Error(
-        JSON.stringify({
-          message:
-            'Exceeds the maximum trading range. Please lower the position size.',
-          code: 509,
-        })
-      )
-    }
-  }
-
-  return selectBest(selected, results, true)
+  return selectBest(results, true)
 }
-*/
+

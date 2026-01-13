@@ -3,7 +3,7 @@ import { RPC_URL, CHAIN_ID } from '@/configs'
 
 export class RpcClient {
   private static instance: RpcClient
-  private cachedClients: Record<string, PublicClient> = {}
+  private client: PublicClient | null = null
 
   private constructor() {}
 
@@ -15,13 +15,11 @@ export class RpcClient {
   }
 
   getClient(chainId?: number, rpcUrl?: string): PublicClient {
-    const key = `${chainId ?? CHAIN_ID}-${rpcUrl ?? RPC_URL}`
-
-    if (this.cachedClients[key]) {
-      return this.cachedClients[key]
+    if (this.client) {
+      return this.client
     }
 
-    const client = createPublicClient({
+    this.client = createPublicClient({
       batch: {
         multicall: true,
       },
@@ -46,9 +44,7 @@ export class RpcClient {
       transport: http(),
     })
 
-    this.cachedClients[key] = client
-
-    return client
+    return this.client
   }
 
   static getClient(chainId?: number, rpcUrl?: string): PublicClient {

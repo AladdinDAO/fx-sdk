@@ -1,3 +1,5 @@
+import { ConvertData } from '@/types'
+
 export enum ROUTE_TYPES {
   Velora = 'Velora',
   ODOS = 'Odos',
@@ -9,10 +11,7 @@ export type QuoteResult = {
   name: ROUTE_TYPES
   src: bigint
   dst: bigint
-  convertData?: {
-    encoding: bigint
-    routes: string[]
-  }
+  convertData?: ConvertData
 }
 
 export type RouteResult = {
