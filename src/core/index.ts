@@ -9,7 +9,9 @@ import { getPositionsByUser } from '@/utils/service'
 import { tokens } from '@/configs/tokens'
 
 export interface FxSdkConfig {
+  /** Optional RPC URL for blockchain connection. Defaults to configured value. */
   rpcUrl?: string
+  /** Optional chain ID. Default is 1 (Ethereum mainnet). */
   chainId?: number
 }
 
@@ -18,9 +20,20 @@ export class FxSdk {
     getClient(config?.chainId, config?.rpcUrl)
   }
 
+  /**
+   * Get all positions for a user in a specific market and position type.
+   * @param request - Request parameters
+   * @param request.userAddress - The user's wallet address
+   * @param request.market - Market type: 'ETH' or 'BTC'
+   * @param request.type - Position type: 'long' or 'short'
+   * @returns Array of position information objects
+   */
   async getPositions(request: {
+    /** The user's wallet address */
     userAddress: string
+    /** Market type: 'ETH' or 'BTC' */
     market: Market
+    /** Position type: 'long' or 'short' */
     type: PositionType
   }) {
     const { userAddress, market, type } = request
@@ -47,6 +60,20 @@ export class FxSdk {
     return positions
   } 
 
+  /**
+   * Increase a position or open a new position.
+   * @param request - Request parameters
+   * @param request.market - Market type: 'ETH' or 'BTC'
+   * @param request.type - Position type: 'long' or 'short'
+   * @param request.positionId - Position ID (0 for new position, > 0 for existing position)
+   * @param request.leverage - Leverage multiplier (must be greater than 0)
+   * @param request.inputTokenAddress - Input token contract address
+   * @param request.amount - Input amount in wei units (bigint)
+   * @param request.slippage - Slippage tolerance as percentage (0-100)
+   * @param request.userAddress - User's wallet address
+   * @param request.targets - Optional array of route types to use
+   * @returns Object containing route options with transaction arrays
+   */
   async increasePosition(request: IncreasePositionRequest) {
     const {
       market,
@@ -118,6 +145,20 @@ export class FxSdk {
     })
   }
 
+  /**
+   * Reduce a position or close a position.
+   * @param request - Request parameters
+   * @param request.market - Market type: 'ETH' or 'BTC'
+   * @param request.type - Position type: 'long' or 'short'
+   * @param request.positionId - Existing position ID (must be > 0)
+   * @param request.outputTokenAddress - Output token contract address
+   * @param request.amount - Amount to reduce in wei units (bigint)
+   * @param request.slippage - Slippage tolerance as percentage (0-100)
+   * @param request.userAddress - User's wallet address
+   * @param request.isClosePosition - Optional flag to fully close the position
+   * @param request.targets - Optional array of route types to use
+   * @returns Object containing route options with transaction arrays
+   */
   async reducePosition(request: ReducePositionRequest) {
     const {
       market,
@@ -188,6 +229,18 @@ export class FxSdk {
     })
   }
 
+  /**
+   * Adjust the leverage multiplier of an existing position.
+   * @param request - Request parameters
+   * @param request.market - Market type: 'ETH' or 'BTC'
+   * @param request.type - Position type: 'long' or 'short'
+   * @param request.positionId - Existing position ID (must be > 0)
+   * @param request.leverage - Target leverage multiplier (must be greater than 0)
+   * @param request.slippage - Slippage tolerance as percentage (0-100)
+   * @param request.userAddress - User's wallet address
+   * @param request.targets - Optional array of route types to use
+   * @returns Object containing route options with transaction arrays
+   */
   async adjustPositionLeverage(request: AdjustPositionLeverageRequest) {
     const {
       market,
@@ -236,6 +289,18 @@ export class FxSdk {
     return position.adjustPositionLeverage(request)
   }
 
+  /**
+   * Deposit collateral to a position and mint fxUSD.
+   * Note: Only supports long positions.
+   * @param request - Request parameters
+   * @param request.market - Market type: 'ETH' or 'BTC'
+   * @param request.positionId - Position ID (0 for new position, > 0 for existing position)
+   * @param request.userAddress - User's wallet address
+   * @param request.depositTokenAddress - Deposit token contract address
+   * @param request.depositAmount - Amount of collateral to deposit in wei units (bigint)
+   * @param request.mintAmount - Amount of fxUSD to mint in wei units (bigint)
+   * @returns Object containing transaction array
+   */
   async depositAndMint(request: DepositAndMintRequest) {
     const {
       market,
@@ -301,6 +366,18 @@ export class FxSdk {
     })
   }
 
+  /**
+   * Repay debt and withdraw collateral from a position.
+   * Note: Only supports long positions.
+   * @param request - Request parameters
+   * @param request.market - Market type: 'ETH' or 'BTC'
+   * @param request.positionId - Existing position ID (must be > 0)
+   * @param request.userAddress - User's wallet address
+   * @param request.repayAmount - Amount of fxUSD to repay in wei units (bigint)
+   * @param request.withdrawAmount - Amount of collateral to withdraw in wei units (bigint)
+   * @param request.withdrawTokenAddress - Withdraw token contract address
+   * @returns Object containing transaction array
+   */
   async repayAndWithdraw(request: RepayAndWithdrawRequest) {
     const {
       market,

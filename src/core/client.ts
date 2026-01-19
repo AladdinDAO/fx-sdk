@@ -14,6 +14,12 @@ export class RpcClient {
     return RpcClient.instance
   }
 
+  /**
+   * Get or create the RPC client instance.
+   * @param chainId - Optional chain ID (defaults to configured value)
+   * @param rpcUrl - Optional RPC URL (defaults to configured value)
+   * @returns PublicClient instance
+   */
   getClient(chainId?: number, rpcUrl?: string): PublicClient {
     if (this.client) {
       return this.client
@@ -47,11 +53,23 @@ export class RpcClient {
     return this.client
   }
 
+  /**
+   * Static method to get the RPC client instance.
+   * @param chainId - Optional chain ID (defaults to configured value)
+   * @param rpcUrl - Optional RPC URL (defaults to configured value)
+   * @returns PublicClient instance
+   */
   static getClient(chainId?: number, rpcUrl?: string): PublicClient {
     return RpcClient.getInstance().getClient(chainId, rpcUrl)
   }
 }
 
+/**
+ * Get the RPC client instance (singleton pattern).
+ * @param chainId - Optional chain ID (defaults to configured value)
+ * @param rpcUrl - Optional RPC URL (defaults to configured value)
+ * @returns PublicClient instance
+ */
 export function getClient(chainId?: number, rpcUrl?: string): PublicClient {
   return RpcClient.getClient(chainId, rpcUrl)
 }

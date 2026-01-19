@@ -14,21 +14,37 @@ export class Pool {
   readonly config: PoolConfig
   readonly price: Price
 
-  constructor({ poolName }: { poolName: PoolName }) {
+  /**
+   * Creates a new Pool instance.
+   * @param poolName - Pool name identifier
+   */
+  constructor({ poolName }: { /** Pool name identifier */ poolName: PoolName }) {
     this.config = pools[poolName]
     this.price = new Price({ pool: this })
   }
 
+  /**
+   * Get the pool manager contract address.
+   * @returns Pool manager contract address
+   */
   getPoolManagerAddress() {
     return this.config.isShort
       ? contracts.ShortPoolManager
       : contracts.PoolManager
   }
 
+  /**
+   * Get the pool manager ABI.
+   * @returns Pool manager ABI array
+   */
   getPoolManagerAbi() {
     return this.config.isShort ? ShortPoolManagerAbi : PoolManagerAbi
   }
 
+  /**
+   * Get pool data from the blockchain.
+   * @returns Object containing pool capacity, balance, fee ratios, and pause status
+   */
   async getPoolData() {
     const calls = [
       {
@@ -100,6 +116,10 @@ export class Pool {
     }
   }
 
+  /**
+   * Get comprehensive pool information including price data.
+   * @returns Pool information object with all pool details
+   */
   async getPoolInfo(): Promise<PoolInfo> {
     const { isShort } = this.config
 

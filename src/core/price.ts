@@ -11,10 +11,18 @@ import { tokens } from '@/configs/tokens'
 export class Price {
   private pool: Pool
 
-  constructor({ pool }: { pool: Pool }) {
+  /**
+   * Creates a new Price instance.
+   * @param pool - Pool instance
+   */
+  constructor({ pool }: { /** Pool instance */ pool: Pool }) {
     this.pool = pool
   }
 
+  /**
+   * Get the rate resolution for the pool.
+   * @returns Rate resolution as bigint (1e18 for non-wstETH pools, actual rate for wstETH pools)
+   */
   async getRateRes() {
     const rateRes = (await getClient().readContract({
       address: contracts.IRateProvider as `0x${string}`,
@@ -28,6 +36,10 @@ export class Price {
     return BigInt(1e18)
   }
 
+  /**
+   * Get the oracle price data.
+   * @returns Object containing anchor price, min price, and max price
+   */
   async getOraclePrice() {
     const oraclePrice = await getClient().readContract({
       address: this.pool.config.oracle as `0x${string}`,
@@ -44,6 +56,10 @@ export class Price {
     }
   }
 
+  /**
+   * Get the buy price (price when buying fxUSD with collateral).
+   * @returns Buy price as a percentage
+   */
   async getBuyPrice() {
     const fxUSDAmount = 1e20
     const { isShort, deltaDebtAddress, deltaCollAddress, precision } =
@@ -62,6 +78,10 @@ export class Price {
     return cBN(fxUSDAmount).div(dst).div(1e18).times(precision).toString()
   }
 
+  /**
+   * Get the sell price (price when selling fxUSD for collateral).
+   * @returns Sell price as a percentage
+   */
   async getSellPrice() {
     const AmountMap = {
       wstETH: 1e16, // Use 0.01 wstETH as baseline

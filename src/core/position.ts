@@ -22,13 +22,22 @@ export class Position {
   private poolInfo: PoolInfo
   private userAddress: string
 
+  /**
+   * Creates a new Position instance.
+   * @param poolInfo - Pool information object
+   * @param positionId - Position ID (0 for new position, > 0 for existing position)
+   * @param userAddress - User's wallet address
+   */
   constructor({
     poolInfo,
     positionId,
     userAddress,
   }: {
+    /** Pool information object */
     poolInfo: PoolInfo
+    /** Position ID (0 for new position, > 0 for existing position) */
     positionId: number
+    /** User's wallet address */
     userAddress: string
   }) {
     this.positionId = positionId
@@ -36,6 +45,10 @@ export class Position {
     this.userAddress = userAddress
   }
 
+  /**
+   * Get raw position data from the contract.
+   * @returns Object containing raw collateral and debt amounts
+   */
   async getPosition() {
     if (this.positionId === 0) {
       return {
@@ -60,6 +73,10 @@ export class Position {
     }
   }
 
+  /**
+   * Get detailed position information including leverage calculations.
+   * @returns Object containing position ID, raw collateral/debt, current leverage, and LSD leverage
+   */
   async getPositionInfo() {
     const position = await this.getPosition()
     const { rawColls, rawDebts } = position
@@ -248,6 +265,15 @@ export class Position {
     }
   }
 
+  /**
+   * Reduce a position or close a position.
+   * @param outputTokenAddress - Output token contract address
+   * @param amount - Amount to reduce in wei units (bigint)
+   * @param slippage - Slippage tolerance as percentage (0-100)
+   * @param targets - Optional array of route types to use
+   * @param isClosePosition - Optional flag to fully close the position
+   * @returns Object containing route options with transaction arrays
+   */
   async reducePosition({
     outputTokenAddress,
     amount,
@@ -366,6 +392,13 @@ export class Position {
     }
   }
 
+  /**
+   * Adjust the leverage multiplier of an existing position.
+   * @param leverage - Target leverage multiplier (must be greater than 0)
+   * @param slippage - Slippage tolerance as percentage (0-100)
+   * @param targets - Optional array of route types to use
+   * @returns Object containing route options with transaction arrays
+   */
   async adjustPositionLeverage({
     leverage,
     slippage,
@@ -486,6 +519,14 @@ export class Position {
 
   }
 
+  /**
+   * Deposit collateral to a position and mint fxUSD.
+   * Note: Only supports long positions.
+   * @param depositTokenAddress - Deposit token contract address
+   * @param depositAmount - Amount of collateral to deposit in wei units (bigint)
+   * @param mintAmount - Amount of fxUSD to mint in wei units (bigint)
+   * @returns Object containing transaction array
+   */
   async depositAndMint({
     depositTokenAddress,
     depositAmount,
