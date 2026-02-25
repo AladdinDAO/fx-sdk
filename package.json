@@ -1,5 +1,5 @@
 {
-  "name": "fx-sdk",
+  "name": "@aladdindao/fx-sdk",
   "version": "1.0.0",
   "type": "module",
   "main": "./dist/index.js",
