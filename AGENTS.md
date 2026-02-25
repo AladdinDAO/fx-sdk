@@ -7,7 +7,7 @@ SDK for **leveraged positions** (long/short) on **ETH** and **BTC**. Amounts are
 ## Entry point
 
 ```ts
-import { FxSdk, tokens } from 'fx-sdk'
+import { FxSdk, tokens } from '@aladdindao/fx-sdk'
 const sdk = new FxSdk({ rpcUrl?: string, chainId?: number })
 ```
 
