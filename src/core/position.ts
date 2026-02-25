@@ -46,7 +46,7 @@ export class Position {
   }
 
   /**
-   * Get raw position data from the contract.
+   * Gets raw position data from the pool contract.
    * @returns Object containing raw collateral and debt amounts
    */
   async getPosition() {
@@ -64,7 +64,7 @@ export class Position {
     })
 
     if (!Array.isArray(position)) {
-      throw new Error('Unexpected result from getPosition')
+      throw new Error('Unexpected getPosition response')
     }
 
     return {
@@ -74,7 +74,7 @@ export class Position {
   }
 
   /**
-   * Get detailed position information including leverage calculations.
+   * Gets detailed position information including leverage calculations.
    * @returns Object containing position ID, raw collateral/debt, current leverage, and LSD leverage
    */
   async getPositionInfo() {

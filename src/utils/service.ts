@@ -8,7 +8,7 @@ import AFPoolAbi from '@/abis/AFPool.json'
 import { pools } from '@/configs/pools'
 
 /**
- * Get the number of decimals for a token.
+ * Gets the number of decimals for a token.
  * @param address - Token contract address
  * @returns Number of decimals as bigint (18 for native ETH)
  */
@@ -25,7 +25,7 @@ export const getDecimals = async (address: string) => {
 }
 
 /**
- * Query the conversion result for a given amount and convert data.
+ * Queries the conversion result for a given amount and convert data.
  * @param amount - Amount to convert in wei units (bigint)
  * @param convertData - Convert data structure with encoding and routes
  * @returns Converted amount in wei units (bigint)
@@ -43,7 +43,7 @@ export const getQueryConvert = async (
 }
 
 /**
- * Get the owner address of a position.
+ * Gets the owner address of a position.
  * @param poolAddress - Pool contract address
  * @param positionId - Position ID
  * @returns Owner address
@@ -58,7 +58,7 @@ export const getOwnerOf = async (poolAddress: string, positionId: number) => {
 }
 
 /**
- * Get the current transaction nonce for an address.
+ * Gets the current transaction nonce for an address.
  * @param address - Wallet address
  * @returns Current transaction nonce
  */
@@ -69,8 +69,8 @@ export const getNonce = async (address: string) => {
 }
 
 /**
- * Get all position IDs owned by a user from the subgraph.
- * @param poolName - Pool name identifier
+ * Gets all position IDs owned by a user from the subgraph.
+ * @param poolName - Pool name
  * @param userAddress - User's wallet address
  * @returns Array of position IDs
  */

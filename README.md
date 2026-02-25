@@ -413,6 +413,12 @@ This software is provided "as is" without warranty of any kind, express or impli
 
 By using this SDK, you acknowledge that you understand and accept all risks associated with trading leveraged positions and interacting with smart contracts. The developers and contributors of this SDK are not responsible for any losses, damages, or liabilities that may arise from the use of this software.
 
+## Agent-friendly usage
+
+- **[AGENTS.md](./AGENTS.md)** — When to use each operation, parameter rules, errors.
+- **Type exports** — Request/response types exported from the package.
+- **[agent-tools.json](./agent-tools.json)** — JSON Schema for tool registration; amounts are decimal strings, convert to `bigint` before calling the SDK.
+
 ## License
 
 MIT

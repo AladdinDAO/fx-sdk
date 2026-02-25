@@ -2,7 +2,7 @@ import { getRouter } from '@/configs/routers'
 import { ConvertData } from '@/types'
 
 /**
- * Get zap routes for token conversion.
+ * Gets zap routes for token conversion.
  * @param fromTokenAddress - Source token contract address
  * @param toTokenAddress - Destination token contract address
  * @param isV3 - Optional flag to use V3 router (default: false)
@@ -24,7 +24,7 @@ export const getZapRoutes = ({
   const routerData = getRouter(fromTokenAddress, toTokenAddress, isV3)
   if (!routerData.length) {
     throw new Error(
-      `Zap route not found for ${fromTokenAddress} to ${toTokenAddress}`
+      `No zap route found for ${fromTokenAddress} to ${toTokenAddress}`
     )
   }
   return {
