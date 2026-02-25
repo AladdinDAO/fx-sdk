@@ -1,5 +1,12 @@
 # FX SDK — Agent Guide
 
+## Local Skill
+
+- **Skill name**: `fx-sdk-agent`
+- **Skill file**: `skills/fx-sdk-agent/SKILL.md`
+- **Use this skill when**: the user asks to integrate FX SDK into an AI agent/tool, generate SDK calling code, produce transaction plans (`routes`/`txs`), or troubleshoot SDK parameter errors.
+- **Execution note**: when inputs come from `agent-tools.json`, convert amount strings to `bigint` before calling SDK methods.
+
 ## Purpose
 
 SDK for **leveraged positions** (long/short) on **ETH** and **BTC**. Amounts are **wei** (bigint); e.g. 1 ETH = `1000000000000000000n`.
