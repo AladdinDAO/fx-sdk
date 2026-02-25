@@ -3,7 +3,7 @@ import type { Abi, PublicClient } from "viem";
 const MULTICALL_BATCH_SIZE = 50;
 const DELAY_TIME_MS = 500;
 
-/** Result type for multicall operations */
+/** Result type for multicall operations. */
 export type MulticallResult = {
   /** Result data from the contract call */
   result?: unknown;
@@ -13,7 +13,7 @@ export type MulticallResult = {
   error?: string;
 };
 
-/** Contract call configuration for multicall */
+/** Contract call configuration for multicall. */
 export type MulticallContractCall = {
   /** Contract address */
   address: `0x${string}`;
@@ -26,12 +26,12 @@ export type MulticallContractCall = {
 };
 
 /**
- * Execute multiple contract calls in batches with delay between batches.
+ * Executes multiple contract calls in batches, with a delay between batches.
  * @param client - PublicClient instance for blockchain interaction
  * @param contracts - Array of contract calls to execute
  * @param batchSize - Number of calls per batch (default: 50)
  * @param delayMs - Delay in milliseconds between batches (default: 500)
- * @returns Array of results, undefined for failed calls
+ * @returns Array of results; entries are undefined for failed calls
  */
 export async function batchedMulticall<MulticallResult>(
   client: PublicClient,

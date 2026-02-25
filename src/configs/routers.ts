@@ -275,7 +275,7 @@ export const getRouter = (
   )?.routers[toAddress.toLowerCase()]
 
   if (!router) {
-    throw new Error(`Router not found for ${fromAddress} to ${toAddress}`)
+    throw new Error(`Swap router not found for ${fromAddress} to ${toAddress}`)
   }
 
   return router

@@ -29,7 +29,7 @@ export class FxRoute extends Aggregator {
     })
 
     if (!convertData) {
-      throw new Error(`Convert data not found for ${src} to ${dst}`)
+      throw new Error(`Conversion route not found for ${src} to ${dst}`)
     }
 
     const outAmount = await getQueryConvert(amount, convertData)

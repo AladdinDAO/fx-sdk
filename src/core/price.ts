@@ -20,7 +20,7 @@ export class Price {
   }
 
   /**
-   * Get the rate resolution for the pool.
+   * Gets the rate resolution for the pool.
    * @returns Rate resolution as bigint (1e18 for non-wstETH pools, actual rate for wstETH pools)
    */
   async getRateRes() {
@@ -37,8 +37,8 @@ export class Price {
   }
 
   /**
-   * Get the oracle price data.
-   * @returns Object containing anchor price, min price, and max price
+   * Gets oracle price data.
+   * @returns Object containing anchor price, minimum price, and maximum price
    */
   async getOraclePrice() {
     const oraclePrice = await getClient().readContract({
@@ -47,7 +47,7 @@ export class Price {
       functionName: 'getPrice',
     })
     if (!Array.isArray(oraclePrice)) {
-      throw new Error('Unexpected result from getPrice')
+      throw new Error('Unexpected getPrice response')
     }
     return {
       anchorPrice: oraclePrice[0],
@@ -57,7 +57,7 @@ export class Price {
   }
 
   /**
-   * Get the buy price (price when buying fxUSD with collateral).
+   * Gets the buy price (price when buying fxUSD with collateral).
    * @returns Buy price as a percentage
    */
   async getBuyPrice() {
@@ -79,7 +79,7 @@ export class Price {
   }
 
   /**
-   * Get the sell price (price when selling fxUSD for collateral).
+   * Gets the sell price (price when selling fxUSD for collateral).
    * @returns Sell price as a percentage
    */
   async getSellPrice() {

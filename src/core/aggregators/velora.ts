@@ -45,7 +45,7 @@ export class Velora extends Aggregator {
       !response.data?.priceRoute?.srcAmount ||
       !response.data?.priceRoute?.destAmount
     ) {
-      throw new Error('Missing price route from response')
+      throw new Error('Missing price route in response')
     }
 
     return {
@@ -111,7 +111,7 @@ export class Velora extends Aggregator {
     const pr = priceResponse.data?.priceRoute
 
     if (!tx?.to || !tx?.data || !pr?.srcAmount || !pr?.destAmount) {
-      throw new Error('Missing transaction data from response')
+      throw new Error('Missing transaction data in response')
     }
 
     return {

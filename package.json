@@ -10,7 +10,8 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./agent-tools.json": "./agent-tools.json"
   },
   "sideEffects": false,
   "scripts": {
@@ -42,5 +43,6 @@
     "decimal.js": "10.6.0",
     "es-toolkit": "1.43.0",
     "viem": "2.43.1"
-  }
+  },
+  "packageManager": "pnpm@10.30.1+sha512.3590e550d5384caa39bd5c7c739f72270234b2f6059e13018f975c313b1eb9fefcc09714048765d4d9efe961382c312e624572c0420762bdc5d5940cdf9be73a"
 }

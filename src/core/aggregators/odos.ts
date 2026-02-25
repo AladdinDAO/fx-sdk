@@ -86,7 +86,7 @@ export class Odos extends Aggregator {
 
     const pathId = quoteRes.data?.pathId
     if (!pathId) {
-      throw new Error('Missing pathId from quote response')
+      throw new Error('Missing pathId in quote response')
     }
 
     const assembleRes = await http.post(`${ODOS_BASE_URL}/sor/assemble`, {
@@ -99,7 +99,7 @@ export class Odos extends Aggregator {
     const output = assembleRes.data?.outputTokens?.[0]?.amount
 
     if (!tx?.to || !tx?.data || !input || !output) {
-      throw new Error('Missing transaction data from assemble response')
+      throw new Error('Missing transaction data in assemble response')
     }
 
     return {

@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FX SDK Agent Tools",
+  "description": "JSON Schema for registering SDK methods as tools. Amounts are decimal strings; convert to bigint before calling the SDK.",
+  "definitions": {
+    "market": {
+      "type": "string",
+      "enum": ["ETH", "BTC"],
+      "description": "ETH or BTC"
+    },
+    "positionType": {
+      "type": "string",
+      "enum": ["long", "short"],
+      "description": "long or short"
+    },
+    "userAddress": {
+      "type": "string",
+      "pattern": "^0x[a-fA-F0-9]{40}$",
+      "description": "Ethereum address"
+    },
+    "tokenAddress": {
+      "type": "string",
+      "pattern": "^0x[a-fA-F0-9]{40}$",
+      "description": "Token address; prefer tokens.*"
+    },
+    "amountWei": {
+      "type": "string",
+      "pattern": "^[0-9]+$",
+      "description": "Wei as decimal string; convert to bigint before SDK call"
+    },
+    "slippagePercent": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 100,
+      "exclusiveMinimum": true,
+      "exclusiveMaximum": true,
+      "description": "Slippage in percent (e.g. 1 = 1%)"
+    }
+  },
+  "tools": [
+    {
+      "name": "getPositions",
+      "description": "List positions for user in market and type (long/short). Use to get positionId before other ops.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "market": { "$ref": "#/definitions/market" },
+          "type": { "$ref": "#/definitions/positionType" }
+        },
+        "required": ["userAddress", "market", "type"]
+      }
+    },
+    {
+      "name": "increasePosition",
+      "description": "Open new (positionId 0) or add to existing. Returns routes with txs to execute in order.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "market": { "$ref": "#/definitions/market" },
+          "type": { "$ref": "#/definitions/positionType" },
+          "positionId": { "type": "integer", "minimum": 0, "description": "0 = new, >0 = existing" },
+          "leverage": { "type": "number", "exclusiveMinimum": 0, "description": "Leverage multiplier" },
+          "inputTokenAddress": { "$ref": "#/definitions/tokenAddress" },
+          "amountWei": { "$ref": "#/definitions/amountWei" },
+          "slippage": { "$ref": "#/definitions/slippagePercent" },
+          "userAddress": { "$ref": "#/definitions/userAddress" }
+        },
+        "required": ["market", "type", "positionId", "leverage", "inputTokenAddress", "amountWei", "slippage", "userAddress"]
+      }
+    },
+    {
+      "name": "reducePosition",
+      "description": "Reduce size or fully close. isClosePosition: true to close.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "market": { "$ref": "#/definitions/market" },
+          "type": { "$ref": "#/definitions/positionType" },
+          "positionId": { "type": "integer", "minimum": 1, "description": "Existing position ID" },
+          "outputTokenAddress": { "$ref": "#/definitions/tokenAddress" },
+          "amountWei": { "$ref": "#/definitions/amountWei" },
+          "slippage": { "$ref": "#/definitions/slippagePercent" },
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "isClosePosition": { "type": "boolean", "description": "True to close fully", "default": false }
+        },
+        "required": ["market", "type", "positionId", "outputTokenAddress", "amountWei", "slippage", "userAddress"]
+      }
+    },
+    {
+      "name": "adjustPositionLeverage",
+      "description": "Adjust leverage of an existing position.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "market": { "$ref": "#/definitions/market" },
+          "type": { "$ref": "#/definitions/positionType" },
+          "positionId": { "type": "integer", "minimum": 1 },
+          "leverage": { "type": "number", "exclusiveMinimum": 0 },
+          "slippage": { "$ref": "#/definitions/slippagePercent" },
+          "userAddress": { "$ref": "#/definitions/userAddress" }
+        },
+        "required": ["market", "type", "positionId", "leverage", "slippage", "userAddress"]
+      }
+    },
+    {
+      "name": "depositAndMint",
+      "description": "Deposit collateral and mint fxUSD. Long only.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "market": { "$ref": "#/definitions/market" },
+          "positionId": { "type": "integer", "minimum": 0 },
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "depositTokenAddress": { "$ref": "#/definitions/tokenAddress" },
+          "depositAmountWei": { "$ref": "#/definitions/amountWei" },
+          "mintAmountWei": { "$ref": "#/definitions/amountWei" }
+        },
+        "required": ["market", "positionId", "userAddress", "depositTokenAddress", "depositAmountWei", "mintAmountWei"]
+      }
+    },
+    {
+      "name": "repayAndWithdraw",
+      "description": "Repay fxUSD and withdraw collateral. Long only.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "market": { "$ref": "#/definitions/market" },
+          "positionId": { "type": "integer", "minimum": 1 },
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "repayAmountWei": { "$ref": "#/definitions/amountWei" },
+          "withdrawAmountWei": { "$ref": "#/definitions/amountWei" },
+          "withdrawTokenAddress": { "$ref": "#/definitions/tokenAddress" }
+        },
+        "required": ["market", "positionId", "userAddress", "repayAmountWei", "withdrawAmountWei", "withdrawTokenAddress"]
+      }
+    }
+  ]
+}

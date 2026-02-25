@@ -9,9 +9,9 @@ import { getPositionsByUser } from '@/utils/service'
 import { tokens } from '@/configs/tokens'
 
 export interface FxSdkConfig {
-  /** Optional RPC URL for blockchain connection. Defaults to configured value. */
+  /** RPC URL. Defaults to the configured value if omitted. */
   rpcUrl?: string
-  /** Optional chain ID. Default is 1 (Ethereum mainnet). */
+  /** Chain ID. Defaults to 1 (Ethereum mainnet) if omitted. */
   chainId?: number
 }
 
@@ -21,12 +21,12 @@ export class FxSdk {
   }
 
   /**
-   * Get all positions for a user in a specific market and position type.
+   * Gets all positions for a user in a given market and position type.
    * @param request - Request parameters
    * @param request.userAddress - The user's wallet address
-   * @param request.market - Market type: 'ETH' or 'BTC'
+   * @param request.market - Market: 'ETH' or 'BTC'
    * @param request.type - Position type: 'long' or 'short'
-   * @returns Array of position information objects
+   * @returns Array of position info objects (positionId, rawColls, rawDebts, currentLeverage, lsdLeverage)
    */
   async getPositions(request: {
     /** The user's wallet address */
@@ -61,18 +61,18 @@ export class FxSdk {
   } 
 
   /**
-   * Increase a position or open a new position.
+   * Increases a position or opens a new one.
    * @param request - Request parameters
-   * @param request.market - Market type: 'ETH' or 'BTC'
+   * @param request.market - Market: 'ETH' or 'BTC'
    * @param request.type - Position type: 'long' or 'short'
-   * @param request.positionId - Position ID (0 for new position, > 0 for existing position)
-   * @param request.leverage - Leverage multiplier (must be greater than 0)
+   * @param request.positionId - Position ID (0 = new position, > 0 = existing)
+   * @param request.leverage - Leverage multiplier (must be > 0)
    * @param request.inputTokenAddress - Input token contract address
-   * @param request.amount - Input amount in wei units (bigint)
-   * @param request.slippage - Slippage tolerance as percentage (0-100)
+   * @param request.amount - Input amount in wei (bigint)
+   * @param request.slippage - Slippage tolerance in percent (0–100, exclusive)
    * @param request.userAddress - User's wallet address
-   * @param request.targets - Optional array of route types to use
-   * @returns Object containing route options with transaction arrays
+   * @param request.targets - Optional route types to use
+   * @returns Object with positionId, slippage, and routes (each route has txs to execute in order)
    */
   async increasePosition(request: IncreasePositionRequest) {
     const {
@@ -87,15 +87,15 @@ export class FxSdk {
     } = request
 
     if (amount <= 0) {
-      throw new Error('From amount must be greater than 0')
+      throw new Error('Input amount must be greater than 0')
     }
 
     if (!isAddress(inputTokenAddress)) {
-      throw new Error('From token address is not a valid address')
+      throw new Error('Input token address must be a valid Ethereum address')
     }
 
     if (slippage <= 0 || slippage >= 100) {
-      throw new Error('Slippage must be between 0 and 100')
+      throw new Error('Slippage must be between 0 and 100 (exclusive)')
     }
 
     if (leverage <= 0) {
@@ -103,11 +103,11 @@ export class FxSdk {
     }
 
     if (typeof positionId !== 'number' || positionId < 0) {
-      throw new Error('Position ID must be a positive number')
+      throw new Error('Position ID must be a non-negative integer')
     }
 
     if (!isAddress(userAddress)) {
-      throw new Error('User address is not a valid address')
+      throw new Error('User address must be a valid Ethereum address')
     }
 
     const poolName = getPoolName(market, type)
@@ -127,7 +127,7 @@ export class FxSdk {
     if (positionId > 0) {
       const owner = await getOwnerOf(pool.config.poolAddress, positionId)
       if (owner.toLowerCase() !== userAddress.toLowerCase()) {
-        throw new Error('User is not the owner of the position')
+        throw new Error('User is not the owner of this position')
       }
     }
 
@@ -146,18 +146,18 @@ export class FxSdk {
   }
 
   /**
-   * Reduce a position or close a position.
+   * Reduces a position or closes it fully.
    * @param request - Request parameters
-   * @param request.market - Market type: 'ETH' or 'BTC'
+   * @param request.market - Market: 'ETH' or 'BTC'
    * @param request.type - Position type: 'long' or 'short'
    * @param request.positionId - Existing position ID (must be > 0)
    * @param request.outputTokenAddress - Output token contract address
-   * @param request.amount - Amount to reduce in wei units (bigint)
-   * @param request.slippage - Slippage tolerance as percentage (0-100)
+   * @param request.amount - Amount to reduce in wei (bigint)
+   * @param request.slippage - Slippage tolerance in percent (0–100, exclusive)
    * @param request.userAddress - User's wallet address
-   * @param request.isClosePosition - Optional flag to fully close the position
-   * @param request.targets - Optional array of route types to use
-   * @returns Object containing route options with transaction arrays
+   * @param request.isClosePosition - If true, close the position entirely
+   * @param request.targets - Optional route types to use
+   * @returns Object with positionId, slippage, and routes (each route has txs to execute in order)
    */
   async reducePosition(request: ReducePositionRequest) {
     const {
@@ -171,23 +171,23 @@ export class FxSdk {
     } = request
 
     if (amount <= 0) {
-      throw new Error('From amount must be greater than 0')
+      throw new Error('Amount to reduce must be greater than 0')
     }
 
     if (!isAddress(outputTokenAddress)) {
-      throw new Error('From token address is not a valid address')
+      throw new Error('Output token address must be a valid Ethereum address')
     }
 
     if (slippage <= 0 || slippage >= 100) {
-      throw new Error('Slippage must be between 0 and 100')
+      throw new Error('Slippage must be between 0 and 100 (exclusive)')
     }
 
     if (typeof positionId !== 'number' || positionId < 0) {
-      throw new Error('Position ID must be a positive number')
+      throw new Error('Position ID must be a non-negative integer')
     }
 
     if (!isAddress(userAddress)) {
-      throw new Error('User address is not a valid address')
+      throw new Error('User address must be a valid Ethereum address')
     }
 
     const poolName = getPoolName(market, type)
@@ -211,7 +211,7 @@ export class FxSdk {
     if (positionId > 0) {
       const owner = await getOwnerOf(pool.config.poolAddress, positionId)
       if (owner.toLowerCase() !== userAddress.toLowerCase()) {
-        throw new Error('User is not the owner of the position')
+        throw new Error('User is not the owner of this position')
       }
     }
 
@@ -230,16 +230,16 @@ export class FxSdk {
   }
 
   /**
-   * Adjust the leverage multiplier of an existing position.
+   * Adjusts the leverage of an existing position.
    * @param request - Request parameters
-   * @param request.market - Market type: 'ETH' or 'BTC'
+   * @param request.market - Market: 'ETH' or 'BTC'
    * @param request.type - Position type: 'long' or 'short'
    * @param request.positionId - Existing position ID (must be > 0)
-   * @param request.leverage - Target leverage multiplier (must be greater than 0)
-   * @param request.slippage - Slippage tolerance as percentage (0-100)
+   * @param request.leverage - Target leverage (must be > 0)
+   * @param request.slippage - Slippage tolerance in percent (0–100, exclusive)
    * @param request.userAddress - User's wallet address
-   * @param request.targets - Optional array of route types to use
-   * @returns Object containing route options with transaction arrays
+   * @param request.targets - Optional route types to use
+   * @returns Object with positionId, slippage, and routes (each route has txs to execute in order)
    */
   async adjustPositionLeverage(request: AdjustPositionLeverageRequest) {
     const {
@@ -252,7 +252,7 @@ export class FxSdk {
     } = request
 
     if (slippage <= 0 || slippage >= 100) {
-      throw new Error('Slippage must be between 0 and 100')
+      throw new Error('Slippage must be between 0 and 100 (exclusive)')
     }
 
     if (leverage <= 0) {
@@ -260,11 +260,11 @@ export class FxSdk {
     }
 
     if (typeof positionId !== 'number' || positionId < 0) {
-      throw new Error('Position ID must be a positive number')
+      throw new Error('Position ID must be a non-negative integer')
     }
 
     if (!isAddress(userAddress)) {
-      throw new Error('User address is not a valid address')
+      throw new Error('User address must be a valid Ethereum address')
     }
 
     const poolName = getPoolName(market, type)
@@ -274,7 +274,7 @@ export class FxSdk {
     if (positionId > 0) {
       const owner = await getOwnerOf(pool.config.poolAddress, positionId)
       if (owner.toLowerCase() !== userAddress.toLowerCase()) {
-        throw new Error('User is not the owner of the position')
+        throw new Error('User is not the owner of this position')
       }
     }
 
@@ -290,16 +290,15 @@ export class FxSdk {
   }
 
   /**
-   * Deposit collateral to a position and mint fxUSD.
-   * Note: Only supports long positions.
+   * Deposits collateral into a position and mints fxUSD. Long positions only.
    * @param request - Request parameters
-   * @param request.market - Market type: 'ETH' or 'BTC'
-   * @param request.positionId - Position ID (0 for new position, > 0 for existing position)
+   * @param request.market - Market: 'ETH' or 'BTC'
+   * @param request.positionId - Position ID (0 = new, > 0 = existing)
    * @param request.userAddress - User's wallet address
    * @param request.depositTokenAddress - Deposit token contract address
-   * @param request.depositAmount - Amount of collateral to deposit in wei units (bigint)
-   * @param request.mintAmount - Amount of fxUSD to mint in wei units (bigint)
-   * @returns Object containing transaction array
+   * @param request.depositAmount - Collateral amount in wei (bigint)
+   * @param request.mintAmount - fxUSD amount to mint in wei (bigint)
+   * @returns Object with transaction array (execute in order)
    */
   async depositAndMint(request: DepositAndMintRequest) {
     const {
@@ -312,23 +311,23 @@ export class FxSdk {
     } = request
 
     if (depositAmount < 0) {
-      throw new Error('Deposit amount must be greater than or equal to 0')
+      throw new Error('Deposit amount must be non-negative')
     }
 
     if (!isAddress(depositTokenAddress)) {
-      throw new Error('Deposit token address is not a valid address')
+      throw new Error('Deposit token address must be a valid Ethereum address')
     }
 
     if (mintAmount < 0) {
-      throw new Error('Mint amount must be greater than or equal to 0')
+      throw new Error('Mint amount must be non-negative')
     }
 
     if (typeof positionId !== 'number' || positionId < 0) {
-      throw new Error('Position ID must be a positive number')
+      throw new Error('Position ID must be a non-negative integer')
     }
 
     if (!isAddress(userAddress)) {
-      throw new Error('User address is not a valid address')
+      throw new Error('User address must be a valid Ethereum address')
     }
 
     const poolName = getPoolName(market, 'long')
@@ -348,7 +347,7 @@ export class FxSdk {
     if (positionId > 0) {
       const owner = await getOwnerOf(pool.config.poolAddress, positionId)
       if (owner.toLowerCase() !== userAddress.toLowerCase()) {
-        throw new Error('User is not the owner of the position')
+        throw new Error('User is not the owner of this position')
       }
     }
 
@@ -367,16 +366,15 @@ export class FxSdk {
   }
 
   /**
-   * Repay debt and withdraw collateral from a position.
-   * Note: Only supports long positions.
+   * Repays debt and withdraws collateral from a position. Long positions only.
    * @param request - Request parameters
-   * @param request.market - Market type: 'ETH' or 'BTC'
+   * @param request.market - Market: 'ETH' or 'BTC'
    * @param request.positionId - Existing position ID (must be > 0)
    * @param request.userAddress - User's wallet address
-   * @param request.repayAmount - Amount of fxUSD to repay in wei units (bigint)
-   * @param request.withdrawAmount - Amount of collateral to withdraw in wei units (bigint)
+   * @param request.repayAmount - fxUSD amount to repay in wei (bigint)
+   * @param request.withdrawAmount - Collateral amount to withdraw in wei (bigint)
    * @param request.withdrawTokenAddress - Withdraw token contract address
-   * @returns Object containing transaction array
+   * @returns Object with transaction array (execute in order)
    */
   async repayAndWithdraw(request: RepayAndWithdrawRequest) {
     const {
@@ -389,23 +387,23 @@ export class FxSdk {
     } = request
 
     if (repayAmount < 0) {
-      throw new Error('Repay amount must be greater than or equal to 0')
+      throw new Error('Repay amount must be non-negative')
     }
 
     if (!isAddress(withdrawTokenAddress)) {
-      throw new Error('Withdraw token address is not a valid address')
+      throw new Error('Withdraw token address must be a valid Ethereum address')
     }
 
     if (withdrawAmount < 0) {
-      throw new Error('Withdraw amount must be greater than or equal to 0')
+      throw new Error('Withdraw amount must be non-negative')
     }
 
     if (typeof positionId !== 'number' || positionId < 0) {
-      throw new Error('Position ID must be a positive number')
+      throw new Error('Position ID must be a non-negative integer')
     }
 
     if (!isAddress(userAddress)) {
-      throw new Error('User address is not a valid address')
+      throw new Error('User address must be a valid Ethereum address')
     }
 
     const poolName = getPoolName(market, 'long')
@@ -425,7 +423,7 @@ export class FxSdk {
     if (positionId > 0) {
       const owner = await getOwnerOf(pool.config.poolAddress, positionId)
       if (owner.toLowerCase() !== userAddress.toLowerCase()) {
-        throw new Error('User is not the owner of the position')
+        throw new Error('User is not the owner of this position')
       }
     }
 

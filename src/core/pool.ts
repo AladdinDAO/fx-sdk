@@ -16,15 +16,15 @@ export class Pool {
 
   /**
    * Creates a new Pool instance.
-   * @param poolName - Pool name identifier
+   * @param poolName - Pool identifier (e.g. wstETH, WBTC, wstETH_short, WBTC_short)
    */
-  constructor({ poolName }: { /** Pool name identifier */ poolName: PoolName }) {
+  constructor({ poolName }: { /** Pool identifier */ poolName: PoolName }) {
     this.config = pools[poolName]
     this.price = new Price({ pool: this })
   }
 
   /**
-   * Get the pool manager contract address.
+   * Gets the pool manager contract address.
    * @returns Pool manager contract address
    */
   getPoolManagerAddress() {
@@ -34,16 +34,16 @@ export class Pool {
   }
 
   /**
-   * Get the pool manager ABI.
-   * @returns Pool manager ABI array
+   * Gets the pool manager ABI.
+   * @returns Pool manager ABI
    */
   getPoolManagerAbi() {
     return this.config.isShort ? ShortPoolManagerAbi : PoolManagerAbi
   }
 
   /**
-   * Get pool data from the blockchain.
-   * @returns Object containing pool capacity, balance, fee ratios, and pause status
+   * Fetches pool data from the blockchain.
+   * @returns Object containing pool capacity, balances, fee ratios, and pause status
    */
   async getPoolData() {
     const calls = [
@@ -112,12 +112,12 @@ export class Pool {
         repayFeeRatio: fxMintPoolFeeRatioRes[3],
       }
     } catch (error) {
-      throw new Error('Failed to get pool info')
+      throw new Error('Failed to fetch pool data')
     }
   }
 
   /**
-   * Get comprehensive pool information including price data.
+   * Gets comprehensive pool information including price data.
    * @returns Pool information object with all pool details
    */
   async getPoolInfo(): Promise<PoolInfo> {

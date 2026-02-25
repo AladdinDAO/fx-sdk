@@ -68,7 +68,7 @@ export const getEncodeMiscDataWithSlippage = (targetDebtRatio: string, slippage:
 
 export const getPoolName = (market: Market, type: PositionType) => {
   if (type !== 'long' && type !== 'short') {
-    throw new Error('Invalid type')
+    throw new Error("Invalid position type: must be 'long' or 'short'")
   }
   switch (market) {
     case 'ETH':
@@ -76,6 +76,6 @@ export const getPoolName = (market: Market, type: PositionType) => {
     case 'BTC':
       return type === 'long' ? PoolName.WBTC : PoolName.WBTC_short
     default:
-      throw new Error('Invalid market')
+      throw new Error("Invalid market: must be 'ETH' or 'BTC'")
   }
 }

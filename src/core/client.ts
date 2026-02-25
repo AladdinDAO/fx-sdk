@@ -15,10 +15,10 @@ export class RpcClient {
   }
 
   /**
-   * Get or create the RPC client instance.
-   * @param chainId - Optional chain ID (defaults to configured value)
-   * @param rpcUrl - Optional RPC URL (defaults to configured value)
-   * @returns PublicClient instance
+   * Gets or creates the RPC client instance (singleton).
+   * @param chainId - Chain ID (defaults to configured value)
+   * @param rpcUrl - RPC URL (defaults to configured value)
+   * @returns viem PublicClient instance
    */
   getClient(chainId?: number, rpcUrl?: string): PublicClient {
     if (this.client) {
@@ -54,10 +54,10 @@ export class RpcClient {
   }
 
   /**
-   * Static method to get the RPC client instance.
-   * @param chainId - Optional chain ID (defaults to configured value)
-   * @param rpcUrl - Optional RPC URL (defaults to configured value)
-   * @returns PublicClient instance
+   * Gets the RPC client instance (singleton).
+   * @param chainId - Chain ID (defaults to configured value)
+   * @param rpcUrl - RPC URL (defaults to configured value)
+   * @returns viem PublicClient instance
    */
   static getClient(chainId?: number, rpcUrl?: string): PublicClient {
     return RpcClient.getInstance().getClient(chainId, rpcUrl)
@@ -65,10 +65,10 @@ export class RpcClient {
 }
 
 /**
- * Get the RPC client instance (singleton pattern).
- * @param chainId - Optional chain ID (defaults to configured value)
- * @param rpcUrl - Optional RPC URL (defaults to configured value)
- * @returns PublicClient instance
+ * Gets the RPC client instance (singleton).
+ * @param chainId - Chain ID (defaults to configured value)
+ * @param rpcUrl - RPC URL (defaults to configured value)
+ * @returns viem PublicClient instance
  */
 export function getClient(chainId?: number, rpcUrl?: string): PublicClient {
   return RpcClient.getClient(chainId, rpcUrl)

@@ -5,11 +5,11 @@ FX Protocol SDK is a TypeScript SDK for interacting with the FX Protocol. It pro
 ## Installation
 
 ```bash
-npm install fx-sdk
+npm install @aladdindao/fx-sdk
 # or
-yarn add fx-sdk
+yarn add @aladdindao/fx-sdk
 # or
-pnpm add fx-sdk
+pnpm add @aladdindao/fx-sdk
 ```
 
 ## Import Guide
@@ -17,8 +17,8 @@ pnpm add fx-sdk
 The SDK's main entry point exports:
 
 ```typescript
-import { FxSdk, tokens } from 'fx-sdk'
-import type { FxSdkConfig } from 'fx-sdk'
+import { FxSdk, tokens } from '@aladdindao/fx-sdk'
+import type { FxSdkConfig } from '@aladdindao/fx-sdk'
 ```
 
 The `tokens` object contains common token addresses on Ethereum mainnet, so you don't need to define them yourself.
@@ -28,7 +28,7 @@ The `tokens` object contains common token addresses on Ethereum mainnet, so you 
 ### Initialize SDK
 
 ```typescript
-import { FxSdk } from 'fx-sdk'
+import { FxSdk } from '@aladdindao/fx-sdk'
 
 // Use default configuration (mainnet)
 const sdk = new FxSdk()
@@ -45,7 +45,7 @@ const sdk = new FxSdk({
 Open a new position or add to an existing position:
 
 ```typescript
-import { FxSdk } from 'fx-sdk'
+import { FxSdk } from '@aladdindao/fx-sdk'
 
 const sdk = new FxSdk()
 
@@ -96,7 +96,7 @@ const positions = await sdk.getPositions({
 Reduce or close a position:
 
 ```typescript
-import { FxSdk, tokens } from 'fx-sdk'
+import { FxSdk, tokens } from '@aladdindao/fx-sdk'
 
 const result = await sdk.reducePosition({
   market: 'ETH', // 'ETH' or 'BTC'
@@ -115,7 +115,7 @@ const result = await sdk.reducePosition({
 Adjust the leverage multiplier of an existing position:
 
 ```typescript
-import { FxSdk, tokens } from 'fx-sdk'
+import { FxSdk, tokens } from '@aladdindao/fx-sdk'
 
 const result = await sdk.adjustPositionLeverage({
   market: 'ETH', // 'ETH' or 'BTC'
@@ -132,7 +132,7 @@ const result = await sdk.adjustPositionLeverage({
 Deposit collateral to a position and mint fxUSD:
 
 ```typescript
-import { FxSdk, tokens } from 'fx-sdk'
+import { FxSdk, tokens } from '@aladdindao/fx-sdk'
 
 const result = await sdk.depositAndMint({
   market: 'ETH', // 'ETH' or 'BTC' (only supports long positions)
@@ -149,7 +149,7 @@ const result = await sdk.depositAndMint({
 Repay debt and withdraw collateral:
 
 ```typescript
-import { FxSdk, tokens } from 'fx-sdk'
+import { FxSdk, tokens } from '@aladdindao/fx-sdk'
 
 const result = await sdk.repayAndWithdraw({
   market: 'ETH', // 'ETH' or 'BTC' (only supports long positions)
@@ -353,7 +353,7 @@ export interface RepayAndWithdrawRequest {
 ### Complete Open Position Example
 
 ```typescript
-import { FxSdk, tokens } from 'fx-sdk'
+import { FxSdk, tokens } from '@aladdindao/fx-sdk'
 
 async function openPosition() {
   const sdk = new FxSdk({
@@ -412,6 +412,12 @@ This software is provided "as is" without warranty of any kind, express or impli
 **USE AT YOUR OWN RISK**
 
 By using this SDK, you acknowledge that you understand and accept all risks associated with trading leveraged positions and interacting with smart contracts. The developers and contributors of this SDK are not responsible for any losses, damages, or liabilities that may arise from the use of this software.
+
+## Agent-friendly usage
+
+- **[AGENTS.md](./AGENTS.md)** — When to use each operation, parameter rules, errors.
+- **Type exports** — Request/response types exported from the package.
+- **[agent-tools.json](./agent-tools.json)** — JSON Schema for tool registration; amounts are decimal strings, convert to `bigint` before calling the SDK.
 
 ## License
 

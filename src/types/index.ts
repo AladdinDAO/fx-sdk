@@ -6,7 +6,7 @@ export type Market = 'ETH' | 'BTC'
 /** Position type: 'long' or 'short' */
 export type PositionType = 'long' | 'short'
 
-/** Token symbol types */
+/** Supported token symbols */
 export type TokenSymbol = 'ETH' | 'wstETH' | 'stETH' | 'WBTC' | 'USDC' | 'USDT' | 'FXUSD'
 
 /** Price oracle data structure */
