@@ -1,6 +1,6 @@
 {
   "name": "@aladdindao/fx-sdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
@@ -13,6 +13,7 @@
     },
     "./agent-tools.json": "./agent-tools.json"
   },
+  "files": ["dist"],
   "sideEffects": false,
   "scripts": {
     "build": "tsup",
