@@ -1,6 +1,16 @@
 {
   "name": "@aladdindao/fx-sdk",
   "version": "1.0.3",
+  "description": "SDK for F(x) Protocol.",
+  "author": "AladdinDAO",
+  "homepage": "https://fx.aladdin.club/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/aladdindao/fx-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/aladdindao/fx-sdk/issues"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
