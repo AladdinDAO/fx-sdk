@@ -29,7 +29,7 @@ async function increasePosition() {
   console.log(`Using wallet: ${userAddress}`)
 
   // Initialize SDK
-  const rpcUrl = process.env.RPC_URL || 'https://eth.llamarpc.com'
+  const rpcUrl = process.env.RPC_URL || 'https://ethereum-rpc.publicnode.com'
   const chainId = process.env.CHAIN_ID ? parseInt(process.env.CHAIN_ID) : 1
 
   const sdk = new FxSdk({

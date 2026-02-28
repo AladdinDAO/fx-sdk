@@ -19,7 +19,7 @@ cp example/.env.example example/.env
 3. **Edit the `.env` file** and add your private key:
 ```env
 PRIVATE_KEY=your_private_key_here
-RPC_URL=https://eth.llamarpc.com
+RPC_URL=https://ethereum-rpc.publicnode.com
 CHAIN_ID=1
 ```
 
@@ -187,7 +187,7 @@ Your wallet private key. Can be with or without the `0x` prefix.
 
 ### RPC_URL (Optional)
 
-RPC node URL, defaults to `https://eth.llamarpc.com`.
+RPC node URL, defaults to `https://ethereum-rpc.publicnode.com`.
 
 ### CHAIN_ID (Optional)
 

@@ -10,7 +10,7 @@ describe('FxSdk - Initialization', () => {
 
   it('should initialize with custom RPC URL', () => {
     const sdk = new FxSdk({
-      rpcUrl: 'https://eth.llamarpc.com',
+      rpcUrl: 'https://ethereum-rpc.publicnode.com',
     })
     expect(sdk).toBeDefined()
   })
@@ -24,7 +24,7 @@ describe('FxSdk - Initialization', () => {
 
   it('should initialize with both RPC URL and chain ID', () => {
     const sdk = new FxSdk({
-      rpcUrl: 'https://eth.llamarpc.com',
+      rpcUrl: 'https://ethereum-rpc.publicnode.com',
       chainId: 1,
     })
     expect(sdk).toBeDefined()

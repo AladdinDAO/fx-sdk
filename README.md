@@ -357,7 +357,7 @@ import { FxSdk, tokens } from '@aladdindao/fx-sdk'
 
 async function openPosition() {
   const sdk = new FxSdk({
-    rpcUrl: 'https://eth.llamarpc.com',
+    rpcUrl: 'https://ethereum-rpc.publicnode.com',
     chainId: 1,
   })
 
