@@ -1,4 +1,5 @@
 export * from '@/types/pool'
+export * from '@/types/bridge'
 import { ROUTE_TYPES } from '@/core/aggregators'
 
 /** Market type: 'ETH' or 'BTC' */
