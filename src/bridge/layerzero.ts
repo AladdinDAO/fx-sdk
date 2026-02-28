@@ -149,6 +149,12 @@ function addressToBytes32(addr: string): `0x${string}` {
   return (`0x${hex}`) as `0x${string}`
 }
 
+/** amount/1e18 truncated to 4 decimal places, then * 1e18. E.g. 0.00125678 -> 0.0012 -> 1200000000000000. Avoids minAmountLD precision errors. */
+function minAmountLDWith4Decimals(amountLD: bigint): bigint {
+  const FOUR_DECIMALS_WEI = 10n ** 14n // 1e18 / 1e4
+  return (amountLD / FOUR_DECIMALS_WEI) * FOUR_DECIMALS_WEI
+}
+
 export function getBridgeQuote(request: BridgeQuoteRequest): Promise<BridgeQuoteResult> {
   const {
     sourceChainId,
@@ -187,7 +193,7 @@ export function getBridgeQuote(request: BridgeQuoteRequest): Promise<BridgeQuote
     dstEid,
     to: addressToBytes32(recipient),
     amountLD: amount,
-    minAmountLD: amount,
+    minAmountLD: minAmountLDWith4Decimals(amount),
     extraOptions: getExtraOptions(tokenKey),
     composeMsg: '0x' as `0x${string}`,
     oftCmd: '0x' as `0x${string}`,
@@ -236,7 +242,7 @@ export async function buildBridgeTx(
     dstEid,
     to: addressToBytes32(recipient),
     amountLD: amount,
-    minAmountLD: amount,
+    minAmountLD: minAmountLDWith4Decimals(amount),
     extraOptions: getExtraOptions(tokenKey),
     composeMsg: '0x' as `0x${string}`,
     oftCmd: '0x' as `0x${string}`,
