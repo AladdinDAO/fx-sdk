@@ -25,11 +25,13 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 | Operation | When to use |
 |-----------|-------------|
 | **getPositions** | List positions for market+type (read-only). Use to get `positionId` before other ops. |
-| **increasePosition** | Open new (`positionId: 0`) or add to existing. Returns `routes` with `txs`. |
+| **increasePosition** | Open new (`positionId: 0`) or add to existing. Returns `routes` with `txs`. Optional `targets` for route types. |
 | **reducePosition** | Reduce size or close; `isClosePosition: true` to close fully. |
 | **adjustPositionLeverage** | Change leverage of existing position. |
 | **depositAndMint** | Long only: deposit collateral, mint fxUSD. |
 | **repayAndWithdraw** | Long only: repay fxUSD, withdraw collateral. |
+| **getBridgeQuote** | Fee quote for LayerZero V2 bridge Base <-> Ethereum (fxUSD, fxSAVE). |
+| **buildBridgeTx** | Build bridge tx payload (`to`, `data`, `value`); send on source chain. |
 
 ## Markets
 
@@ -54,6 +56,8 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 - **getPositions**: `[{ positionId, rawColls, rawDebts, currentLeverage, lsdLeverage }]`.
 - **increasePosition / reducePosition / adjustPositionLeverage**: `{ positionId?, slippage, routes }`. Each route has `txs`; execute in order. Each `tx`: `type`, `from`, `to`, `data`, `nonce`, optional `value`.
 - **depositAndMint / repayAndWithdraw**: `{ txs }`; execute in order.
+- **getBridgeQuote**: `{ nativeFee, lzTokenFee }` (wei). Use source chain RPC.
+- **buildBridgeTx**: `{ tx: { to, data, value }, quote }`. Send single `tx` on source chain (1 or 8453).
 
 ## Errors
 
@@ -62,6 +66,14 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 - "... must be a valid Ethereum address" → valid 0x or `tokens.*`.
 - "User is not the owner of this position" → caller must own `positionId`; use getPositions.
 - "Input/Output/Deposit/Withdraw token address must be ..." → use allowed token for market (see Parameter rules).
+- Bridge: "Unsupported bridge chainId" → use `sourceChainId`/`destChainId` in `[1, 8453]` and they must differ. "Unsupported bridge token" → use `fxUSD` or `fxSAVE`, or a valid OFT address.
+
+## Bridge (Base <-> Ethereum)
+
+- **Chains**: source and destination must be Ethereum (1) and Base (8453). Pass **source** chain `rpcUrl`/`chainId` when building the SDK or in the request.
+- **Tokens**: Pre-set keys `fxUSD`, `fxSAVE` (addresses aligned with layerzero-bridge). Or pass OFT contract address on source chain.
+- **Flow**: Call `getBridgeQuote({ sourceChainId, destChainId, token, amount, recipient })` for fees; then `buildBridgeTx({ ... same, refundAddress? })` to get `{ tx, quote }`. Send `tx` (to, data, value) on source chain.
+- **Ethereum as source**: User must approve the bridge contract (`tx.to`, i.e. RootEndPointV2) to spend the token (e.g. fxUSD) before sending the bridge tx.
 
 ## Tool schema
 
