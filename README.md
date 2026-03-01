@@ -1,5 +1,7 @@
 # FX SDK
 
+[![npm](https://img.shields.io/npm/v/@aladdindao/fx-sdk?style=flat-square)](https://www.npmjs.com/package/@aladdindao/fx-sdk)
+
 FX Protocol SDK is a TypeScript SDK for interacting with the FX Protocol. It provides comprehensive functionality for creating and managing leveraged positions.
 
 ## Installation

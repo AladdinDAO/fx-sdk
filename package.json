@@ -2,7 +2,7 @@
   "name": "@aladdindao/fx-sdk",
   "version": "1.0.3",
   "description": "SDK for F(x) Protocol.",
-  "author": "AladdinDAO",
+  "author": "AladdinDAO <dev@aladdin.club>",
   "homepage": "https://fx.aladdin.club/",
   "repository": {
     "type": "git",
