@@ -1,6 +1,6 @@
 ---
 name: fx-sdk-agent
-description: Use FX Protocol TypeScript SDK (fx-sdk) to query positions, build leverage operation transaction plans, and generate runnable scripts for increasePosition, reducePosition, adjustPositionLeverage, depositAndMint, and repayAndWithdraw. Use when users ask to integrate this SDK into an agent/tool, produce transaction execution code, troubleshoot SDK parameters, or validate FX trading workflows on Ethereum mainnet.
+description: Use FX Protocol TypeScript SDK (fx-sdk) to query positions, build leverage operation transaction plans, bridge tokens between Base and Ethereum (LayerZero), and generate runnable scripts for increasePosition, reducePosition, adjustPositionLeverage, depositAndMint, repayAndWithdraw, getBridgeQuote, and buildBridgeTx. Use when users ask to integrate this SDK into an agent/tool, produce transaction execution code, troubleshoot SDK parameters, or validate FX trading workflows on Ethereum mainnet or Base.
 ---
 
 # FX SDK Agent Skill
@@ -9,7 +9,7 @@ Use this skill to produce reliable `fx-sdk` integrations for agent workflows.
 
 ## Follow This Workflow
 
-1. Confirm user intent: read-only query (`getPositions`) or transaction-producing action (`increase/reduce/adjust/deposit/repay`).
+1. Confirm user intent: read-only query (`getPositions`), transaction-producing action (`increase/reduce/adjust/deposit/repay`), or Base–Ethereum bridge (`getBridgeQuote` / `buildBridgeTx`).
 2. Collect required inputs before coding:
 - `market`: `ETH` or `BTC`
 - position type when needed: `long` or `short`
@@ -18,6 +18,7 @@ Use this skill to produce reliable `fx-sdk` integrations for agent workflows.
 - amount fields (`bigint` in wei-like units)
 - `slippage` (must be `0 < slippage < 100`)
 - `userAddress`
+- For bridge: `sourceChainId` (1 | 8453), `destChainId` (1 | 8453), `token` (key or OFT address), `amount`, `recipient`
 3. Create `FxSdk` once and reuse it.
 4. Return SDK result first (routes/tx plan), then optionally provide transaction sending loop.
 5. Keep nonce order from SDK-provided `txs`; send transactions sequentially.
@@ -52,6 +53,8 @@ const sdk = new FxSdk({ rpcUrl, chainId: 1 })
 - `sdk.adjustPositionLeverage(...)`: rebalance leverage for existing position.
 - `sdk.depositAndMint(...)`: long pool only.
 - `sdk.repayAndWithdraw(...)`: long pool only.
+- `sdk.getBridgeQuote(...)`: fee quote for LayerZero V2 OFT bridge (Base <-> Ethereum). Use source chain RPC.
+- `sdk.buildBridgeTx(...)`: build tx payload (to, data, value) to send on source chain; then send with wallet (same pattern as position txs).
 
 ## Token Constraints
 
@@ -91,6 +94,7 @@ Read these files when examples are required:
 - `example/deposit-and-mint.ts`
 - `example/repay-and-withdraw.ts`
 - `example/get-positions.ts`
+- `example/layerzero-bridge.ts`
 
 For reusable request shapes and test checklist, read:
 

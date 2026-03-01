@@ -2,7 +2,8 @@ import { getClient } from '@/core/client'
 import { isAddress } from 'viem'
 import { Position } from '@/core/position'
 import { Pool } from '@/core/pool'
-import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest, Market, PositionType } from '@/types'
+import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest, Market, PositionType, BridgeQuoteRequest, BridgeQuoteResult, BuildBridgeTxRequest, BuildBridgeTxResult } from '@/types'
+import { getBridgeQuote as getBridgeQuoteImpl, buildBridgeTx as buildBridgeTxImpl } from '@/bridge'
 import { getOwnerOf } from '@/utils/service'
 import { getPoolName } from '@/utils'
 import { getPositionsByUser } from '@/utils/service'
@@ -439,5 +440,23 @@ export class FxSdk {
       ...request,
       withdrawTokenAddress: withdrawTokenAddress.toLowerCase(),
     })
+  }
+
+  /**
+   * Gets a fee quote for bridging tokens between Base and Ethereum via LayerZero V2 OFT.
+   * @param request - sourceChainId (1 | 8453), destChainId (1 | 8453), token (key or OFT address), amount, recipient
+   * @returns { nativeFee, lzTokenFee } in wei
+   */
+  async getBridgeQuote(request: BridgeQuoteRequest): Promise<BridgeQuoteResult> {
+    return getBridgeQuoteImpl(request)
+  }
+
+  /**
+   * Builds the transaction payload to bridge tokens between Base and Ethereum via LayerZero V2 OFT.
+   * @param request - Same as getBridgeQuote, with optional refundAddress
+   * @returns { tx: { to, data, value }, quote } for sending on source chain
+   */
+  async buildBridgeTx(request: BuildBridgeTxRequest): Promise<BuildBridgeTxResult> {
+    return buildBridgeTxImpl(request)
   }
 }

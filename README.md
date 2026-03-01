@@ -163,6 +163,42 @@ const result = await sdk.repayAndWithdraw({
 })
 ```
 
+### Bridge (Base <-> Ethereum)
+
+Bridge tokens between Ethereum and Base via LayerZero V2 (fxUSD, fxSAVE). Quote first, then build the tx and send on the **source** chain.
+
+```typescript
+import { FxSdk } from '@aladdindao/fx-sdk'
+
+const sdk = new FxSdk({ rpcUrl: sourceRpcUrl, chainId: sourceChainId }) // source chain: 1 or 8453
+
+// 1. Get fee quote
+const quote = await sdk.getBridgeQuote({
+  sourceChainId: 1,       // 1 = Ethereum, 8453 = Base
+  destChainId: 8453,      // must differ from sourceChainId
+  token: 'fxUSD',         // 'fxUSD' | 'fxSAVE' or OFT address
+  amount: 100000000000000000n, // 0.1 in wei (18 decimals)
+  recipient: '0x...',     // destination address
+})
+// quote: { nativeFee, lzTokenFee } in wei
+
+// 2. Build tx payload
+const result = await sdk.buildBridgeTx({
+  sourceChainId: 1,
+  destChainId: 8453,
+  token: 'fxUSD',
+  amount: 100000000000000000n,
+  recipient: '0x...',
+  refundAddress: '0x...', // optional; defaults to recipient
+})
+// result.tx: { to, data, value } — send this on source chain
+// result.quote: same as getBridgeQuote
+
+// 3. Send the tx (e.g. with viem walletClient.sendTransaction(result.tx))
+```
+
+When bridging **from Ethereum**, approve the bridge contract (`result.tx.to`) to spend your token (e.g. fxUSD) before sending the bridge tx. See `example/layerzero-bridge.ts` for a full script.
+
 ## Supported Markets
 
 The SDK supports the following markets and position types:
@@ -334,6 +370,27 @@ export interface RepayAndWithdrawRequest {
 }
 ```
 
+### Bridge (Base <-> Ethereum)
+
+```typescript
+// Quote
+interface BridgeQuoteRequest {
+  sourceChainId: 1 | 8453  // Ethereum or Base
+  destChainId: 1 | 8453    // must differ from sourceChainId
+  token: string            // 'fxUSD' | 'fxSAVE' or OFT address on source chain
+  amount: bigint
+  recipient: string
+  sourceRpcUrl?: string
+}
+// Result: { nativeFee: bigint, lzTokenFee: bigint }
+
+// Build tx
+interface BuildBridgeTxRequest extends BridgeQuoteRequest {
+  refundAddress?: string
+}
+// Result: { tx: { to, data, value }, quote }
+```
+
 ## Important Notes
 
 1. **Amount Units**: All amounts use wei units (bigint). For example, 1 ETH = `1000000000000000000n` (10^18).
@@ -349,6 +406,8 @@ export interface RepayAndWithdrawRequest {
 5. **RPC Client**: The SDK uses a singleton pattern to manage the RPC client, with only one client instance globally. The configuration passed during first initialization is used, and subsequent calls reuse the same client.
 
 6. **Error Handling**: All methods may throw errors, please use try-catch for error handling.
+
+7. **Bridge**: Only Ethereum (1) and Base (8453) are supported. Use `getBridgeQuote` then `buildBridgeTx`; send the returned `tx` on the source chain. When the source is Ethereum, approve `tx.to` (RootEndPointV2) to spend your token first. See `example/layerzero-bridge.ts`.
 
 ## Example
 

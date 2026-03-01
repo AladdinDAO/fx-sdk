@@ -35,6 +35,20 @@
       "exclusiveMinimum": true,
       "exclusiveMaximum": true,
       "description": "Slippage in percent (e.g. 1 = 1%)"
+    },
+    "sourceChainId": {
+      "type": "integer",
+      "enum": [1, 8453],
+      "description": "Source chain: 1 = Ethereum, 8453 = Base"
+    },
+    "destChainId": {
+      "type": "integer",
+      "enum": [1, 8453],
+      "description": "Destination chain: 1 = Ethereum, 8453 = Base"
+    },
+    "bridgeToken": {
+      "type": "string",
+      "description": "Token key (e.g. fxUSD, fxSAVE) or OFT address on source chain"
     }
   },
   "tools": [
@@ -133,6 +147,39 @@
           "withdrawTokenAddress": { "$ref": "#/definitions/tokenAddress" }
         },
         "required": ["market", "positionId", "userAddress", "repayAmountWei", "withdrawAmountWei", "withdrawTokenAddress"]
+      }
+    },
+    {
+      "name": "getBridgeQuote",
+      "description": "Get LayerZero V2 bridge fee quote for Base <-> Ethereum OFT. Returns nativeFee and lzTokenFee in wei.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "sourceChainId": { "$ref": "#/definitions/sourceChainId" },
+          "destChainId": { "$ref": "#/definitions/destChainId" },
+          "token": { "$ref": "#/definitions/bridgeToken" },
+          "amountWei": { "$ref": "#/definitions/amountWei" },
+          "recipient": { "$ref": "#/definitions/userAddress" },
+          "sourceRpcUrl": { "type": "string", "description": "Optional RPC URL for source chain" }
+        },
+        "required": ["sourceChainId", "destChainId", "token", "amountWei", "recipient"]
+      }
+    },
+    {
+      "name": "buildBridgeTx",
+      "description": "Build bridge tx payload (to, data, value) for Base <-> Ethereum via LayerZero V2 OFT. Send on source chain.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "sourceChainId": { "$ref": "#/definitions/sourceChainId" },
+          "destChainId": { "$ref": "#/definitions/destChainId" },
+          "token": { "$ref": "#/definitions/bridgeToken" },
+          "amountWei": { "$ref": "#/definitions/amountWei" },
+          "recipient": { "$ref": "#/definitions/userAddress" },
+          "refundAddress": { "$ref": "#/definitions/userAddress" },
+          "sourceRpcUrl": { "type": "string", "description": "Optional RPC URL for source chain" }
+        },
+        "required": ["sourceChainId", "destChainId", "token", "amountWei", "recipient"]
       }
     }
   ]
