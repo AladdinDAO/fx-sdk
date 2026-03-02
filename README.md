@@ -2,7 +2,19 @@
 
 [![npm](https://img.shields.io/npm/v/@aladdindao/fx-sdk?style=flat-square)](https://www.npmjs.com/package/@aladdindao/fx-sdk)
 
-FX Protocol SDK is a TypeScript SDK for interacting with the FX Protocol. It provides comprehensive functionality for creating and managing leveraged positions.
+A TypeScript SDK for interacting with the [FX Protocol](https://fx.aladdin.club/), providing comprehensive functionality for creating and managing leveraged positions.
+
+## About f(x) Protocol
+
+f(x) Protocol is a decentralized on-chain trading platform that enables stress-free leverage on ETH and WBTC while delivering the highest organic & sustainable yield on stablecoins.
+
+### Key Features
+
+- **Up to 7X Leverage**: Long or short exposure with minimum liquidation risk & funding costs
+- **fxUSD Stablecoin**: Scalable & decentralized stablecoin with a strong peg to the dollar
+- **Backed by Blue-Chip Assets**: Collateralized by wstETH and WBTC
+
+🌐 **Website**: [https://fx.aladdin.club/](https://fx.aladdin.club/)
 
 ## Installation
 
