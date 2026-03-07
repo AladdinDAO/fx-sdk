@@ -141,7 +141,7 @@ export async function getFxSaveRedeemStatus(
   const redeemableAt = Number(unlockAt)
   const block = await client.getBlock()
   const now = Number(block.timestamp)
-  const isCooldownComplete = now >= redeemableAt
+  const isCooldownComplete = now >= redeemableAt || Date.now() / 1000 >= redeemableAt
 
   return {
     hasPendingRedeem: true,
