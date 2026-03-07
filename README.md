@@ -496,7 +496,7 @@ By using this SDK, you acknowledge that you understand and accept all risks asso
 - **[AGENTS.md](./AGENTS.md)** — When to use each operation, parameter rules, errors (including fxSAVE: balance, redeem status, **getFxSaveClaimable** for claim preview, claim, deposit, withdraw).
 - **Type exports** — Request/response types exported from the package.
 - **[agent-tools.json](./agent-tools.json)** — JSON Schema for tool registration; amounts are decimal strings, convert to `bigint` before calling the SDK.
-- **Examples** — `example/fxsave-claim.ts`: claimable preview (getFxSaveClaimable) and claim flow; `example/fxsave-redeem-status.ts`: redeem status only.
+- **Examples** — `example/fxsave-claim.ts`: redeem status, claimable preview (getFxSaveClaimable), and claim flow.
 
 ## License
 

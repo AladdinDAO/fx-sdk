@@ -87,7 +87,7 @@ async function fxsaveWithdraw() {
     }
     if (!instant && tokenOut !== 'fxUSDBasePool') {
       console.log(
-        'Request redeem sent. After cooldown, use getRedeemTx() and send the redeem tx (see example/fxsave-redeem-status.ts).'
+        'Request redeem sent. After cooldown, use getRedeemTx() and send the redeem tx (see example/fxsave-claim.ts).'
       )
     } else {
       console.log('Instant withdraw done.')

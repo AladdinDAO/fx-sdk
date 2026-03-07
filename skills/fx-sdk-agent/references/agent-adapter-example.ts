@@ -1,6 +1,9 @@
 import { FxSdk, tokens } from '@aladdindao/fx-sdk'
 import type { Address } from 'viem'
 
+/** Token key for fxSAVE deposit/withdraw */
+export type FxSaveTokenKey = 'usdc' | 'fxUSD' | 'fxUSDBasePool'
+
 export type FxAction =
   | {
       kind: 'getPositions'
@@ -16,6 +19,26 @@ export type FxAction =
       leverage: number
       inputTokenAddress: Address
       amount: bigint
+      slippage: number
+      userAddress: Address
+    }
+  | {
+      kind: 'reducePosition'
+      market: 'ETH' | 'BTC'
+      type: 'long' | 'short'
+      positionId: number
+      outputTokenAddress: Address
+      amount: bigint
+      slippage: number
+      userAddress: Address
+      isClosePosition?: boolean
+    }
+  | {
+      kind: 'adjustPositionLeverage'
+      market: 'ETH' | 'BTC'
+      type: 'long' | 'short'
+      positionId: number
+      leverage: number
       slippage: number
       userAddress: Address
     }
@@ -38,6 +61,25 @@ export type FxAction =
       refundAddress?: Address
       sourceRpcUrl?: string
     }
+  | { kind: 'getFxSaveBalance'; userAddress: Address }
+  | { kind: 'getFxSaveRedeemStatus'; userAddress: Address }
+  | { kind: 'getFxSaveClaimable'; userAddress: Address }
+  | { kind: 'getRedeemTx'; userAddress: Address; receiver?: Address }
+  | {
+      kind: 'depositFxSave'
+      userAddress: Address
+      tokenIn: FxSaveTokenKey
+      amount: bigint
+      slippage?: number
+    }
+  | {
+      kind: 'withdrawFxSave'
+      userAddress: Address
+      tokenOut: FxSaveTokenKey
+      amount: bigint
+      instant?: boolean
+      slippage?: number
+    }
 
 export interface AdapterOptions {
   rpcUrl?: string
@@ -55,17 +97,35 @@ export async function runFxAction(action: FxAction, options: AdapterOptions = {}
 
   if (action.kind === 'increasePosition') {
     const result = await sdk.increasePosition(action)
-
     if (options.planOnly ?? true) {
-      return {
-        mode: 'plan',
-        positionId: result.positionId,
-        routes: result.routes,
-      }
+      return { mode: 'plan' as const, positionId: result.positionId, routes: result.routes }
     }
-
     return {
-      mode: 'execute_required',
+      mode: 'execute_required' as const,
+      message: 'Use wallet client to send selected route.txs sequentially.',
+      routePreview: result.routes[0],
+    }
+  }
+
+  if (action.kind === 'reducePosition') {
+    const result = await sdk.reducePosition(action)
+    if (options.planOnly ?? true) {
+      return { mode: 'plan' as const, positionId: result.positionId, routes: result.routes }
+    }
+    return {
+      mode: 'execute_required' as const,
+      message: 'Use wallet client to send selected route.txs sequentially.',
+      routePreview: result.routes[0],
+    }
+  }
+
+  if (action.kind === 'adjustPositionLeverage') {
+    const result = await sdk.adjustPositionLeverage(action)
+    if (options.planOnly ?? true) {
+      return { mode: 'plan' as const, positionId: result.positionId, routes: result.routes }
+    }
+    return {
+      mode: 'execute_required' as const,
       message: 'Use wallet client to send selected route.txs sequentially.',
       routePreview: result.routes[0],
     }
@@ -80,7 +140,7 @@ export async function runFxAction(action: FxAction, options: AdapterOptions = {}
       recipient: action.recipient,
       sourceRpcUrl: action.sourceRpcUrl,
     })
-    return { mode: 'plan', quote }
+    return { mode: 'plan' as const, quote }
   }
 
   if (action.kind === 'buildBridgeTx') {
@@ -93,27 +153,83 @@ export async function runFxAction(action: FxAction, options: AdapterOptions = {}
       refundAddress: action.refundAddress,
       sourceRpcUrl: action.sourceRpcUrl,
     })
-
     if (options.planOnly ?? true) {
-      return {
-        mode: 'plan',
-        tx: result.tx,
-        quote: result.quote,
-      }
+      return { mode: 'plan' as const, tx: result.tx, quote: result.quote }
     }
-
     return {
-      mode: 'execute_required',
+      mode: 'execute_required' as const,
       message: 'Use wallet client to send result.tx (to, data, value) on source chain.',
       tx: result.tx,
       quote: result.quote,
     }
   }
 
+  if (action.kind === 'getFxSaveBalance') {
+    return sdk.getFxSaveBalance({ userAddress: action.userAddress })
+  }
+
+  if (action.kind === 'getFxSaveRedeemStatus') {
+    return sdk.getFxSaveRedeemStatus({ userAddress: action.userAddress })
+  }
+
+  if (action.kind === 'getFxSaveClaimable') {
+    return sdk.getFxSaveClaimable({ userAddress: action.userAddress })
+  }
+
+  if (action.kind === 'getRedeemTx') {
+    const result = await sdk.getRedeemTx({
+      userAddress: action.userAddress,
+      receiver: action.receiver,
+    })
+    if (options.planOnly ?? true) {
+      return { mode: 'plan' as const, txs: result.txs }
+    }
+    return {
+      mode: 'execute_required' as const,
+      message: 'Use wallet client to send result.txs in order (claim after cooldown).',
+      txs: result.txs,
+    }
+  }
+
+  if (action.kind === 'depositFxSave') {
+    const result = await sdk.depositFxSave({
+      userAddress: action.userAddress,
+      tokenIn: action.tokenIn,
+      amount: action.amount,
+      slippage: action.slippage,
+    })
+    if (options.planOnly ?? true) {
+      return { mode: 'plan' as const, txs: result.txs }
+    }
+    return {
+      mode: 'execute_required' as const,
+      message: 'Use wallet client to send result.txs in order (approve then deposit).',
+      txs: result.txs,
+    }
+  }
+
+  if (action.kind === 'withdrawFxSave') {
+    const result = await sdk.withdrawFxSave({
+      userAddress: action.userAddress,
+      tokenOut: action.tokenOut,
+      amount: action.amount,
+      instant: action.instant,
+      slippage: action.slippage,
+    })
+    if (options.planOnly ?? true) {
+      return { mode: 'plan' as const, txs: result.txs }
+    }
+    return {
+      mode: 'execute_required' as const,
+      message: 'Use wallet client to send result.txs in order.',
+      txs: result.txs,
+    }
+  }
+
   throw new Error('Unsupported action kind')
 }
 
-// Example payload for agent planners
+// Example payloads for agent planners
 export const sampleIncreasePayload: FxAction = {
   kind: 'increasePosition',
   market: 'ETH',
@@ -124,4 +240,12 @@ export const sampleIncreasePayload: FxAction = {
   amount: 10n ** 17n,
   slippage: 1,
   userAddress: '0x0000000000000000000000000000000000000001',
+}
+
+export const sampleDepositFxSavePayload: FxAction = {
+  kind: 'depositFxSave',
+  userAddress: '0x0000000000000000000000000000000000000001',
+  tokenIn: 'usdc',
+  amount: 1_000_000n, // 1 USDC (6 decimals)
+  slippage: 0.5,
 }
