@@ -210,6 +210,17 @@
       }
     },
     {
+      "name": "getFxSaveClaimable",
+      "description": "Redeem status plus preview receive (amountYieldOutWei, amountStableOutWei from previewRedeem — fxUSD + USDC to receive on claim). Use to show Min Receive before claim.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" }
+        },
+        "required": ["userAddress"]
+      }
+    },
+    {
       "name": "getRedeemTx",
       "description": "Build claim tx(s) after cooldown. Call when getFxSaveRedeemStatus returns isCooldownComplete true. Returns txs to execute in order.",
       "parameters": {

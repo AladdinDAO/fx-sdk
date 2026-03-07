@@ -1,6 +1,6 @@
 ---
 name: fx-sdk-agent
-description: Use FX Protocol TypeScript SDK (fx-sdk) to query positions, build leverage operation transaction plans, bridge tokens between Base and Ethereum (LayerZero), and fxSAVE (balance, redeem status, deposit, withdraw, claim). Generate runnable scripts for increasePosition, reducePosition, adjustPositionLeverage, depositAndMint, repayAndWithdraw, getBridgeQuote, buildBridgeTx, getFxSaveBalance, getFxSaveRedeemStatus, getRedeemTx, depositFxSave, withdrawFxSave. Use when users ask to integrate this SDK into an agent/tool, produce transaction execution code, troubleshoot SDK parameters, or validate FX trading workflows on Ethereum mainnet or Base.
+description: Use FX Protocol TypeScript SDK (fx-sdk) to query positions, build leverage operation transaction plans, bridge tokens between Base and Ethereum (LayerZero), and fxSAVE (balance, redeem status, claimable preview, deposit, withdraw, claim). Generate runnable scripts for increasePosition, reducePosition, adjustPositionLeverage, depositAndMint, repayAndWithdraw, getBridgeQuote, buildBridgeTx, getFxSaveBalance, getFxSaveRedeemStatus, getFxSaveClaimable, getRedeemTx, depositFxSave, withdrawFxSave. Use when users ask to integrate this SDK into an agent/tool, produce transaction execution code, troubleshoot SDK parameters, or validate FX trading workflows on Ethereum mainnet or Base.
 ---
 
 # FX SDK Agent Skill
@@ -9,7 +9,7 @@ Use this skill to produce reliable `fx-sdk` integrations for agent workflows.
 
 ## Follow This Workflow
 
-1. Confirm user intent: read-only query (`getPositions`, `getFxSaveBalance`, `getFxSaveRedeemStatus`), transaction-producing action (`increase/reduce/adjust/deposit/repay`, fxSAVE `depositFxSave`/`withdrawFxSave`/`getRedeemTx`), or Base–Ethereum bridge (`getBridgeQuote` / `buildBridgeTx`).
+1. Confirm user intent: read-only query (`getPositions`, `getFxSaveBalance`, `getFxSaveRedeemStatus`, `getFxSaveClaimable`), transaction-producing action (`increase/reduce/adjust/deposit/repay`, fxSAVE `depositFxSave`/`withdrawFxSave`/`getRedeemTx`), or Base–Ethereum bridge (`getBridgeQuote` / `buildBridgeTx`).
 2. Collect required inputs before coding:
 - `market`: `ETH` or `BTC`
 - position type when needed: `long` or `short`
@@ -56,7 +56,7 @@ const sdk = new FxSdk({ rpcUrl, chainId: 1 })
 - `sdk.repayAndWithdraw(...)`: long pool only.
 - `sdk.getBridgeQuote(...)`: fee quote for LayerZero V2 OFT bridge (Base <-> Ethereum). Use source chain RPC.
 - `sdk.buildBridgeTx(...)`: build tx payload (to, data, value) to send on source chain; then send with wallet (same pattern as position txs).
-- **fxSAVE**: `sdk.getFxSaveBalance({ userAddress })`: fxSAVE balance (shares wei, optional assets wei). `sdk.getFxSaveRedeemStatus({ userAddress })`: pending redeem amount, cooldown, redeemableAt, isCooldownComplete. `sdk.getRedeemTx({ userAddress, receiver? })`: build claim tx when isCooldownComplete (uses `claim(receiver)`); execute txs in order. `sdk.depositFxSave({ userAddress, tokenIn, amount, slippage? })`: deposit USDC/fxUSD/basePool; returns `{ txs }` (approve + deposit). `sdk.withdrawFxSave({ userAddress, tokenOut, amount, instant?, slippage? })`: tokenOut `fxUSDBasePool` → redeem; usdc/fxUSD and !instant → requestRedeem; usdc/fxUSD and instant → approve + instantRedeemFromFxSave; execute txs in order.
+- **fxSAVE**: `sdk.getFxSaveBalance({ userAddress })`: fxSAVE balance (shares wei, optional assets wei). `sdk.getFxSaveRedeemStatus({ userAddress })`: pending redeem amount, cooldown, redeemableAt, isCooldownComplete. `sdk.getFxSaveClaimable({ userAddress })`: same as redeem status plus `previewReceive` (amountYieldOutWei, amountStableOutWei from previewRedeem — fxUSD + USDC to receive on claim). `sdk.getRedeemTx({ userAddress, receiver? })`: build claim tx when isCooldownComplete (uses `claim(receiver)`); execute txs in order. `sdk.depositFxSave({ userAddress, tokenIn, amount, slippage? })`: deposit USDC/fxUSD/basePool; returns `{ txs }` (approve + deposit). `sdk.withdrawFxSave({ userAddress, tokenOut, amount, instant?, slippage? })`: tokenOut `fxUSDBasePool` → redeem; usdc/fxUSD and !instant → requestRedeem; usdc/fxUSD and instant → approve + instantRedeemFromFxSave; execute txs in order.
 
 ## Token Constraints
 
@@ -103,6 +103,7 @@ Read these files when examples are required:
 - `example/fxsave-deposit.ts`
 - `example/fxsave-withdraw.ts`
 - `example/fxsave-redeem-status.ts`
+- `example/fxsave-claim.ts` (claimable preview + claim; align with app fxSAVEPage + ClaimModal)
 
 For reusable request shapes and test checklist, read:
 

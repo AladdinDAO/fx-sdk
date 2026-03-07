@@ -12,6 +12,9 @@ import type {
   GetFxSaveBalanceResult,
   GetFxSaveRedeemStatusRequest,
   GetFxSaveRedeemStatusResult,
+  GetFxSaveClaimableRequest,
+  GetFxSaveClaimableResult,
+  FxSaveClaimPreviewReceive,
   GetRedeemTxRequest,
   GetRedeemTxResult,
   FxSaveDepositRequest,
@@ -146,6 +149,34 @@ export async function getFxSaveRedeemStatus(
     cooldownPeriodSeconds: cooldownPeriodRes,
     redeemableAt,
     isCooldownComplete,
+  }
+}
+
+/**
+ * Gets claimable status and preview receive (align with app useFxSaveInfo willRedeemReceiveData + ClaimModal).
+ * When hasPendingRedeem, includes previewReceive from FxUSDBasePool.previewRedeem(pendingSharesWei).
+ */
+export async function getFxSaveClaimable(
+  request: GetFxSaveClaimableRequest
+): Promise<GetFxSaveClaimableResult> {
+  const status = await getFxSaveRedeemStatus(request)
+  if (!status.hasPendingRedeem || status.pendingSharesWei === 0n) {
+    return status
+  }
+  const client = getClient()
+  const previewRes = (await client.readContract({
+    address: contracts.FxUSDBasePool as `0x${string}`,
+    abi: FxUSDBasePoolAbi,
+    functionName: 'previewRedeem',
+    args: [status.pendingSharesWei],
+  })) as [bigint, bigint]
+  const [amountYieldOutWei, amountStableOutWei] = previewRes
+  return {
+    ...status,
+    previewReceive: {
+      amountYieldOutWei,
+      amountStableOutWei,
+    },
   }
 }
 
@@ -525,6 +556,9 @@ export type {
   GetFxSaveBalanceResult,
   GetFxSaveRedeemStatusRequest,
   GetFxSaveRedeemStatusResult,
+  GetFxSaveClaimableRequest,
+  GetFxSaveClaimableResult,
+  FxSaveClaimPreviewReceive,
   GetRedeemTxRequest,
   GetRedeemTxResult,
   FxSaveDepositRequest,

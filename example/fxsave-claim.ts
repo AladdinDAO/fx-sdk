@@ -1,3 +1,9 @@
+/**
+ * Query claimable value and perform claim (align with app fxSAVEPage + ClaimModal).
+ * - getFxSaveClaimable: redeem status + preview receive (fxUSD + USDC from previewRedeem)
+ * - getRedeemTx: build claim(receiver) tx when cooldown complete
+ * Run: npm run example:fxsave-claim
+ */
 import { FxSdk } from '../src'
 import { privateKeyToAccount } from 'viem/accounts'
 import {
@@ -23,7 +29,13 @@ function getChain(chainId: number, rpcUrl: string) {
   })
 }
 
-async function fxsaveRedeemStatus() {
+function formatWei(wei: bigint, decimals: number) {
+  const s = wei.toString()
+  if (s.length <= decimals) return '0.' + s.padStart(decimals, '0')
+  return s.slice(0, -decimals) + '.' + s.slice(-decimals)
+}
+
+async function fxsaveClaim() {
   let userAddress = process.env.USER_ADDRESS
   if (!userAddress && process.env.PRIVATE_KEY) {
     const privateKey = process.env.PRIVATE_KEY.startsWith('0x')
@@ -39,22 +51,22 @@ async function fxsaveRedeemStatus() {
   const chainId = process.env.CHAIN_ID ? parseInt(process.env.CHAIN_ID) : 1
   const sdk = new FxSdk({ rpcUrl, chainId })
 
-  console.log(`Redeem status for: ${userAddress}\n`)
+  console.log(`Claimable for: ${userAddress}\n`)
 
   try {
-    const status = await sdk.getFxSaveRedeemStatus({ userAddress })
+    const claimable = await sdk.getFxSaveClaimable({ userAddress })
 
-    if (!status.hasPendingRedeem) {
+    if (!claimable.hasPendingRedeem) {
       console.log('Withdrawal Process: none')
-      console.log('Has pending redeem: false')
+      console.log('Nothing to claim.')
       return
     }
 
-    const amountFormatted = Number(status.pendingSharesWei) / 1e18
-    const isCanClaim = status.isCooldownComplete
+    const amountFormatted = Number(claimable.pendingSharesWei) / 1e18
+    const isCanClaim = claimable.isCooldownComplete
     const redeemableAtStr =
-      status.redeemableAt != null
-        ? new Date(status.redeemableAt * 1000).toLocaleString()
+      claimable.redeemableAt != null
+        ? new Date(claimable.redeemableAt * 1000).toLocaleString()
         : 'N/A'
 
     console.log('--- Withdrawal Process (align with fxSAVEPage) ---')
@@ -67,19 +79,33 @@ async function fxsaveRedeemStatus() {
         `${amountFormatted} fxUSD Stability Pool Tokens can be withdrawn after ${redeemableAtStr}`
       )
     }
-    console.log('')
-    console.log('Has pending redeem:', status.hasPendingRedeem)
-    console.log('Pending shares (wei):', status.pendingSharesWei.toString())
+
+    if (claimable.previewReceive) {
+      const { amountYieldOutWei, amountStableOutWei } = claimable.previewReceive
+      console.log(
+        '\n--- Preview receive (align with ClaimModal Min Receive) ---'
+      )
+      console.log(
+        `  fxUSD: ${formatWei(amountYieldOutWei, 18)} (wei: ${amountYieldOutWei})`
+      )
+      console.log(
+        `  USDC:  ${formatWei(amountStableOutWei, 6)} (wei: ${amountStableOutWei})`
+      )
+    }
+
+    console.log('\n--- Status ---')
+    console.log('Pending shares (wei):', claimable.pendingSharesWei.toString())
     console.log(
       'Cooldown period (seconds):',
-      status.cooldownPeriodSeconds.toString()
+      claimable.cooldownPeriodSeconds.toString()
     )
     console.log('Redeemable at:', redeemableAtStr)
-    console.log('Redeemable at (timestamp):', status.redeemableAt ?? 'N/A')
-    console.log('Is cooldown complete:', status.isCooldownComplete)
+    console.log('Redeemable at (timestamp):', claimable.redeemableAt ?? 'N/A')
+    console.log('Is cooldown complete:', claimable.isCooldownComplete)
 
-    if (status.isCooldownComplete && status.hasPendingRedeem) {
-      console.log('\nCooldown complete. Building claim tx (claim(receiver))...')
+    if (claimable.isCooldownComplete && claimable.hasPendingRedeem) {
+      console.log('\n--- Claim ---')
+      console.log('Building claim tx (claim(receiver))...')
       const { txs } = await sdk.getRedeemTx({ userAddress })
       if (process.env.PRIVATE_KEY && txs.length > 0) {
         const privateKey = process.env.PRIVATE_KEY.startsWith('0x')
@@ -106,6 +132,7 @@ async function fxsaveRedeemStatus() {
         console.log('Claim tx sent:', hash)
         const receipt = await publicClient.waitForTransactionReceipt({ hash })
         console.log('Confirmed in block', receipt.blockNumber)
+        console.log('Claim done.')
       } else {
         console.log('Claim tx (send with your wallet):', txs[0])
       }
@@ -116,4 +143,4 @@ async function fxsaveRedeemStatus() {
   }
 }
 
-fxsaveRedeemStatus()
+fxsaveClaim()

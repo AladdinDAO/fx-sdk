@@ -48,7 +48,7 @@
     "example:fxsave": "tsx example/get-fxsave-balance.ts",
     "example:fxsave-deposit": "tsx example/fxsave-deposit.ts",
     "example:fxsave-withdraw": "tsx example/fxsave-withdraw.ts",
-    "example:fxsave-redeem-status": "tsx example/fxsave-redeem-status.ts"
+    "example:fxsave-claim": "tsx example/fxsave-claim.ts"
   },
   "license": "MIT",
   "devDependencies": {

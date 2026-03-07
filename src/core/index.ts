@@ -2,11 +2,12 @@ import { getClient } from '@/core/client'
 import { isAddress } from 'viem'
 import { Position } from '@/core/position'
 import { Pool } from '@/core/pool'
-import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest, Market, PositionType, BridgeQuoteRequest, BridgeQuoteResult, BuildBridgeTxRequest, BuildBridgeTxResult, GetFxSaveBalanceRequest, GetFxSaveBalanceResult, GetFxSaveRedeemStatusRequest, GetFxSaveRedeemStatusResult, GetRedeemTxRequest, GetRedeemTxResult, FxSaveDepositRequest, FxSaveDepositResult, FxSaveWithdrawRequest, FxSaveWithdrawResult } from '@/types'
+import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest, Market, PositionType, BridgeQuoteRequest, BridgeQuoteResult, BuildBridgeTxRequest, BuildBridgeTxResult, GetFxSaveBalanceRequest, GetFxSaveBalanceResult, GetFxSaveRedeemStatusRequest, GetFxSaveRedeemStatusResult, GetFxSaveClaimableRequest, GetFxSaveClaimableResult, GetRedeemTxRequest, GetRedeemTxResult, FxSaveDepositRequest, FxSaveDepositResult, FxSaveWithdrawRequest, FxSaveWithdrawResult } from '@/types'
 import { getBridgeQuote as getBridgeQuoteImpl, buildBridgeTx as buildBridgeTxImpl } from '@/bridge'
 import {
   getFxSaveBalance as getFxSaveBalanceImpl,
   getFxSaveRedeemStatus as getFxSaveRedeemStatusImpl,
+  getFxSaveClaimable as getFxSaveClaimableImpl,
   getRedeemTx as getRedeemTxImpl,
   depositFxSave as depositFxSaveImpl,
   withdrawFxSave as withdrawFxSaveImpl,
@@ -486,7 +487,16 @@ export class FxSdk {
   }
 
   /**
-   * Builds the redeem tx(s) after cooldown. Call when getFxSaveRedeemStatus returns isCooldownComplete true.
+   * Gets claimable status and preview receive (fxUSD + USDC). Align with app fxSAVEPage + ClaimModal.
+   */
+  async getFxSaveClaimable(
+    request: GetFxSaveClaimableRequest
+  ): Promise<GetFxSaveClaimableResult> {
+    return getFxSaveClaimableImpl(request)
+  }
+
+  /**
+   * Builds the claim tx after cooldown. Call when getFxSaveRedeemStatus/getFxSaveClaimable returns isCooldownComplete true.
    */
   async getRedeemTx(request: GetRedeemTxRequest): Promise<GetRedeemTxResult> {
     return getRedeemTxImpl(request)

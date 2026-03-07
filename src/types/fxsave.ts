@@ -43,6 +43,26 @@ export interface GetFxSaveRedeemStatusResult {
   isCooldownComplete: boolean
 }
 
+/** Request for getFxSaveClaimable (redeem status + preview receive). */
+export interface GetFxSaveClaimableRequest {
+  /** User's wallet address. */
+  userAddress: string
+}
+
+/** Preview of what user will receive when claiming (fxUSD + USDC from base pool). */
+export interface FxSaveClaimPreviewReceive {
+  /** Yield token amount (fxUSD) in wei. */
+  amountYieldOutWei: bigint
+  /** Stable token amount (USDC) in wei. */
+  amountStableOutWei: bigint
+}
+
+/** Result of getFxSaveClaimable. */
+export interface GetFxSaveClaimableResult extends GetFxSaveRedeemStatusResult {
+  /** When hasPendingRedeem, preview of fxUSD + USDC from FxUSDBasePool.previewRedeem (align with app willRedeemReceiveData). */
+  previewReceive?: FxSaveClaimPreviewReceive
+}
+
 /** Request for getRedeemTx (after cooldown). */
 export interface GetRedeemTxRequest {
   /** User's wallet address. */

@@ -34,6 +34,7 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 | **buildBridgeTx** | Build bridge tx payload (`to`, `data`, `value`); send on source chain. |
 | **getFxSaveBalance** | fxSAVE balance (shares wei, optional assets wei). Read-only. |
 | **getFxSaveRedeemStatus** | Pending redeem amount, cooldown period, redeemableAt, isCooldownComplete. Read-only. |
+| **getFxSaveClaimable** | Redeem status plus preview receive (fxUSD + USDC from previewRedeem). Use to show "Min Receive" before claim. Read-only. |
 | **getRedeemTx** | Build claim tx after cooldown (`claim(receiver)`). Call when isCooldownComplete; returns `{ txs }`. |
 | **depositFxSave** | Deposit into fxSAVE: tokenIn `usdc`\|`fxUSD`\|`fxUSDBasePool`, amount wei, optional slippage. Returns `{ txs }`. |
 | **withdrawFxSave** | Withdraw: tokenOut `fxUSDBasePool` → redeem; usdc/fxUSD → requestRedeem or instant (instant needs slippage). Returns `{ txs }`. |
@@ -65,6 +66,7 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 - **buildBridgeTx**: `{ tx: { to, data, value }, quote }`. Send single `tx` on source chain (1 or 8453).
 - **getFxSaveBalance**: `{ balanceWei, assetsWei? }`.
 - **getFxSaveRedeemStatus**: `{ hasPendingRedeem, pendingSharesWei, cooldownPeriodSeconds, redeemableAt, isCooldownComplete }`.
+- **getFxSaveClaimable**: extends redeem status with optional `previewReceive?: { amountYieldOutWei, amountStableOutWei }` (fxUSD + USDC from FxUSDBasePool.previewRedeem).
 - **getRedeemTx / depositFxSave / withdrawFxSave**: `{ txs }`; execute in order (same shape as depositAndMint txs).
 
 ## Errors
@@ -88,6 +90,7 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 
 - **Balance**: `getFxSaveBalance({ userAddress })` → shares wei, optional assets wei.
 - **Redeem status**: `getFxSaveRedeemStatus({ userAddress })` → hasPendingRedeem, pendingSharesWei, redeemableAt (timestamp), isCooldownComplete. Display as "X fxUSD Stability Pool Tokens can be claimed now" or "can be withdrawn after [date]".
+- **Claimable (preview receive)**: `getFxSaveClaimable({ userAddress })` → same as redeem status plus `previewReceive: { amountYieldOutWei, amountStableOutWei }` (fxUSD + USDC from previewRedeem; align with app ClaimModal Min Receive).
 - **Claim**: When isCooldownComplete, call `getRedeemTx({ userAddress, receiver? })` to get claim tx(s); send in order.
 - **Deposit**: `depositFxSave({ userAddress, tokenIn, amount, slippage? })`; tokenIn one of usdc, fxUSD, fxUSDBasePool. Sends approve + deposit txs.
 - **Withdraw**: `withdrawFxSave({ userAddress, tokenOut, amount, instant?, slippage? })`; tokenOut fxUSDBasePool → redeem; usdc/fxUSD and !instant → requestRedeem; usdc/fxUSD and instant → approve + instantRedeemFromFxSave.
