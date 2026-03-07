@@ -236,11 +236,19 @@ You can create your own scripts based on these examples. The basic structure is 
 ```typescript
 import { FxSdk } from '../src/core'
 import { privateKeyToAccount } from 'viem/accounts'
-import { createWalletClient, http } from 'viem'
-import { mainnet } from 'viem/chains'
+import { createWalletClient, http, defineChain } from 'viem'
 import * as dotenv from 'dotenv'
 
 dotenv.config()
+
+function getChain(chainId: number, rpcUrl: string) {
+  return defineChain({
+    id: chainId,
+    name: `Chain ${chainId}`,
+    nativeCurrency: { decimals: 18, name: 'Ether', symbol: 'ETH' },
+    rpcUrls: { default: { http: [rpcUrl] } },
+  })
+}
 
 async function yourFunction() {
   // 1. Create account from private key
@@ -251,17 +259,21 @@ async function yourFunction() {
   const account = privateKeyToAccount(privateKey)
   const userAddress = account.address
 
+  const rpcUrl = process.env.RPC_URL || 'https://ethereum-rpc.publicnode.com'
+  const chainId = parseInt(process.env.CHAIN_ID || '1')
+  const chain = getChain(chainId, rpcUrl)
+
   // 2. Initialize SDK
   const sdk = new FxSdk({
-    rpcUrl: process.env.RPC_URL,
-    chainId: parseInt(process.env.CHAIN_ID || '1'),
+    rpcUrl,
+    chainId,
   })
 
   // 3. Create wallet client
   const walletClient = createWalletClient({
     account,
-    chain: mainnet,
-    transport: http(process.env.RPC_URL),
+    chain,
+    transport: http(rpcUrl),
   })
 
   // 4. Call SDK method to get transactions

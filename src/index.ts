@@ -20,6 +20,18 @@ export type {
   BuildBridgeTxRequest,
   BuildBridgeTxResult,
   BridgeTxPayload,
+  GetFxSaveBalanceRequest,
+  GetFxSaveBalanceResult,
+  GetFxSaveRedeemStatusRequest,
+  GetFxSaveRedeemStatusResult,
+  GetRedeemTxRequest,
+  GetRedeemTxResult,
+  FxSaveDepositRequest,
+  FxSaveDepositResult,
+  FxSaveWithdrawRequest,
+  FxSaveWithdrawResult,
+  FxSaveTx,
+  FxSaveTokenIn,
 } from "./types";
 export type { PoolName, PoolConfig, PoolInfo } from "./types/pool";
 export {

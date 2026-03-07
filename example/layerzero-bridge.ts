@@ -1,7 +1,12 @@
 import { FxSdk, CHAIN_ID_ETHEREUM, CHAIN_ID_BASE, DEFAULT_RPC_BY_CHAIN } from '../src'
 import { privateKeyToAccount } from 'viem/accounts'
-import { createWalletClient, createPublicClient, http, parseEther } from 'viem'
-import { mainnet, base } from 'viem/chains'
+import {
+  createWalletClient,
+  createPublicClient,
+  http,
+  parseEther,
+  defineChain,
+} from 'viem'
 import * as dotenv from 'dotenv'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -12,10 +17,13 @@ dotenv.config({ path: join(__dirname, '.env') })
 
 const SUPPORTED_CHAIN_IDS = [CHAIN_ID_ETHEREUM, CHAIN_ID_BASE] as const
 
-function getChain(chainId: number) {
-  if (chainId === CHAIN_ID_BASE) return base
-  if (chainId === CHAIN_ID_ETHEREUM) return mainnet
-  throw new Error(`Unsupported CHAIN_ID for bridge: ${chainId}. Use 1 (Ethereum) or 8453 (Base).`)
+function getChain(chainId: number, rpcUrl: string) {
+  return defineChain({
+    id: chainId,
+    name: `Chain ${chainId}`,
+    nativeCurrency: { decimals: 18, name: 'Ether', symbol: 'ETH' },
+    rpcUrls: { default: { http: [rpcUrl] } },
+  })
 }
 
 async function layerzeroBridge() {
@@ -44,7 +52,7 @@ async function layerzeroBridge() {
 
   const rpcUrl =
     process.env.RPC_URL || DEFAULT_RPC_BY_CHAIN[sourceChainId]
-  const chain = getChain(sourceChainId)
+  const chain = getChain(sourceChainId, rpcUrl)
 
   console.log(`Using wallet: ${userAddress}`)
   console.log(`Source chain: ${sourceChainId} (${sourceChainId === 8453 ? 'Base' : 'Ethereum'})`)

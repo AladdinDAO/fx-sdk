@@ -265,7 +265,7 @@ export const getRouter = (
   isV3 = false
 ) => {
   if (fromAddress.toLowerCase() == toAddress.toLowerCase()) {
-    return [fromAddress, fromAddress, [], 0n]
+    return [fromAddress, [], 0n]
   }
 
   const theRouter = isV3 ? ROUTER_v3 : ROUTER

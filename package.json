@@ -44,7 +44,11 @@
     "example:deposit": "tsx example/deposit-and-mint.ts",
     "example:repay": "tsx example/repay-and-withdraw.ts",
     "example:adjust": "tsx example/adjust-position-leverage.ts",
-    "example:bridge": "tsx example/layerzero-bridge.ts"
+    "example:bridge": "tsx example/layerzero-bridge.ts",
+    "example:fxsave": "tsx example/get-fxsave-balance.ts",
+    "example:fxsave-deposit": "tsx example/fxsave-deposit.ts",
+    "example:fxsave-withdraw": "tsx example/fxsave-withdraw.ts",
+    "example:fxsave-redeem-status": "tsx example/fxsave-redeem-status.ts"
   },
   "license": "MIT",
   "devDependencies": {
