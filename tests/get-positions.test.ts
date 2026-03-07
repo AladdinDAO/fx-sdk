@@ -40,10 +40,18 @@ describe('FxSDK - Get Positions', () => {
           expect(position).toHaveProperty('rawDebts')
           expect(position).toHaveProperty('currentLeverage')
           expect(position).toHaveProperty('lsdLeverage')
+          expect(position).toHaveProperty('rawCollsToken')
+          expect(position).toHaveProperty('rawDebtsToken')
+          expect(position).toHaveProperty('rawCollsDecimals')
+          expect(position).toHaveProperty('rawDebtsDecimals')
           expect(typeof position.rawColls).toBe('bigint')
           expect(typeof position.rawDebts).toBe('bigint')
           expect(typeof position.currentLeverage).toBe('number')
           expect(typeof position.lsdLeverage).toBe('number')
+          expect(typeof position.rawCollsToken).toBe('string')
+          expect(typeof position.rawDebtsToken).toBe('string')
+          expect(typeof position.rawCollsDecimals).toBe('number')
+          expect(typeof position.rawDebtsDecimals).toBe('number')
         }
       },
       60000
@@ -67,6 +75,10 @@ describe('FxSDK - Get Positions', () => {
           expect(position).toHaveProperty('rawDebts')
           expect(position).toHaveProperty('currentLeverage')
           expect(position).toHaveProperty('lsdLeverage')
+          expect(position).toHaveProperty('rawCollsToken')
+          expect(position).toHaveProperty('rawDebtsToken')
+          expect(position).toHaveProperty('rawCollsDecimals')
+          expect(position).toHaveProperty('rawDebtsDecimals')
         }
       },
       60000
@@ -90,6 +102,10 @@ describe('FxSDK - Get Positions', () => {
           expect(position).toHaveProperty('rawDebts')
           expect(position).toHaveProperty('currentLeverage')
           expect(position).toHaveProperty('lsdLeverage')
+          expect(position).toHaveProperty('rawCollsToken')
+          expect(position).toHaveProperty('rawDebtsToken')
+          expect(position).toHaveProperty('rawCollsDecimals')
+          expect(position).toHaveProperty('rawDebtsDecimals')
         }
       },
       60000
@@ -113,6 +129,10 @@ describe('FxSDK - Get Positions', () => {
           expect(position).toHaveProperty('rawDebts')
           expect(position).toHaveProperty('currentLeverage')
           expect(position).toHaveProperty('lsdLeverage')
+          expect(position).toHaveProperty('rawCollsToken')
+          expect(position).toHaveProperty('rawDebtsToken')
+          expect(position).toHaveProperty('rawCollsDecimals')
+          expect(position).toHaveProperty('rawDebtsDecimals')
         }
       },
       60000

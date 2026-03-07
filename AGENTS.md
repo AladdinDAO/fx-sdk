@@ -59,7 +59,7 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 
 ## Return shapes
 
-- **getPositions**: `[{ positionId, rawColls, rawDebts, currentLeverage, lsdLeverage }]`.
+- **getPositions**: `[{ positionId, rawColls, rawDebts, currentLeverage, lsdLeverage, rawCollsToken, rawDebtsToken, rawCollsDecimals, rawDebtsDecimals }]` (PositionInfo).
 - **increasePosition / reducePosition / adjustPositionLeverage**: `{ positionId?, slippage, routes }`. Each route has `txs`; execute in order. Each `tx`: `type`, `from`, `to`, `data`, `nonce`, optional `value`.
 - **depositAndMint / repayAndWithdraw**: `{ txs }`; execute in order.
 - **getBridgeQuote**: `{ nativeFee, lzTokenFee }` (wei). Use source chain RPC.

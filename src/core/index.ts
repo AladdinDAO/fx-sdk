@@ -35,7 +35,7 @@ export class FxSdk {
    * @param request.userAddress - The user's wallet address
    * @param request.market - Market: 'ETH' or 'BTC'
    * @param request.type - Position type: 'long' or 'short'
-   * @returns Array of position info objects (positionId, rawColls, rawDebts, currentLeverage, lsdLeverage)
+   * @returns Array of position info objects (PositionInfo: positionId, rawColls, rawDebts, currentLeverage, lsdLeverage, rawCollsToken, rawDebtsToken, rawCollsDecimals, rawDebtsDecimals)
    */
   async getPositions(request: {
     /** The user's wallet address */

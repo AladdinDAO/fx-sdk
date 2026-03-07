@@ -351,10 +351,15 @@ interface GetPositionsRequest {
 
 ```typescript
 interface PositionInfo {
-  rawColls: bigint      // Raw collateral amount
-  rawDebts: bigint      // Raw debt amount
-  currentLeverage: number  // Current leverage multiplier
-  lsdLeverage: number   // LSD leverage multiplier
+  positionId: number
+  rawColls: bigint           // Raw collateral amount (wei)
+  rawDebts: bigint           // Raw debt amount (wei)
+  currentLeverage: number    // Current leverage multiplier
+  lsdLeverage: number        // LSD leverage multiplier
+  rawCollsToken: string      // Collateral token symbol (e.g. 'wstETH', 'WBTC')
+  rawDebtsToken: string      // Debt token symbol (e.g. 'fxUSD')
+  rawCollsDecimals: number   // Collateral decimals (typically 18)
+  rawDebtsDecimals: number   // Debt decimals (typically 18)
 }
 ```
 

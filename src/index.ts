@@ -7,6 +7,7 @@ export type {
   Market,
   PositionType,
   TokenSymbol,
+  PositionInfo,
   PriceOracle,
   PositionRequest,
   IncreasePositionRequest,

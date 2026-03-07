@@ -1,6 +1,6 @@
 ---
 name: fx-sdk-agent
-description: Use FX Protocol TypeScript SDK (fx-sdk) to query positions, build leverage operation transaction plans, bridge tokens between Base and Ethereum (LayerZero), and fxSAVE (balance, redeem status, claimable preview, deposit, withdraw, claim). Generate runnable scripts for increasePosition, reducePosition, adjustPositionLeverage, depositAndMint, repayAndWithdraw, getBridgeQuote, buildBridgeTx, getFxSaveBalance, getFxSaveRedeemStatus, getFxSaveClaimable, getRedeemTx, depositFxSave, withdrawFxSave. Use when users ask to integrate this SDK into an agent/tool, produce transaction execution code, troubleshoot SDK parameters, or validate FX trading workflows on Ethereum mainnet or Base.
+description: Use FX Protocol TypeScript SDK (fx-sdk) to query positions (getPositions returns PositionInfo[] with rawColls, rawDebts, rawCollsToken, rawDebtsToken, decimals), build leverage operation transaction plans, bridge tokens between Base and Ethereum (LayerZero), and fxSAVE (balance, redeem status, claimable preview, deposit, withdraw, claim). Generate runnable scripts for increasePosition, reducePosition, adjustPositionLeverage, depositAndMint, repayAndWithdraw, getBridgeQuote, buildBridgeTx, getFxSaveBalance, getFxSaveRedeemStatus, getFxSaveClaimable, getRedeemTx, depositFxSave, withdrawFxSave. Use when users ask to integrate this SDK into an agent/tool, produce transaction execution code, troubleshoot SDK parameters, or validate FX trading workflows on Ethereum mainnet or Base.
 ---
 
 # FX SDK Agent Skill
@@ -48,7 +48,7 @@ const sdk = new FxSdk({ rpcUrl, chainId: 1 })
 
 ## Method Map
 
-- `sdk.getPositions({ userAddress, market, type })`: read-only positions.
+- `sdk.getPositions({ userAddress, market, type })`: read-only; returns `PositionInfo[]` (positionId, rawColls, rawDebts, currentLeverage, lsdLeverage, rawCollsToken, rawDebtsToken, rawCollsDecimals, rawDebtsDecimals).
 - `sdk.increasePosition(...)`: open new position (`positionId: 0`) or add collateral/leverage.
 - `sdk.reducePosition(...)`: reduce or close (`isClosePosition: true`).
 - `sdk.adjustPositionLeverage(...)`: rebalance leverage for existing position.
