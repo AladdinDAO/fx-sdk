@@ -61,13 +61,12 @@ export type FxSaveTokenIn =
   | 'usdc'
   | 'fxUSD'
   | 'fxUSDBasePool'
-  | 'gaugeUSDCfxUSD'
 
 /** Request for depositFxSave. */
 export interface FxSaveDepositRequest {
   /** User's wallet address (and receiver). */
   userAddress: string
-  /** Input token: usdc, fxUSD, fxUSDBasePool, or gaugeUSDCfxUSD. */
+  /** Input token: usdc, fxUSD, or fxUSDBasePool. */
   tokenIn: FxSaveTokenIn
   /** Amount in wei (token's smallest unit). */
   amount: bigint

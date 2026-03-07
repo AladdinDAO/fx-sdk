@@ -49,13 +49,10 @@ async function fxsaveDeposit() {
     transport: http(rpcUrl),
   })
 
-  // Example: deposit USDC, fxUSD, fxUSD Base Pool, or gauge (use FXSAVE_TOKEN_IN in .env)
+  // Example: deposit USDC, fxUSD, or fxUSD Base Pool (use FXSAVE_TOKEN_IN in .env)
   const tokenIn =
-    (process.env.FXSAVE_TOKEN_IN as
-      | 'usdc'
-      | 'fxUSD'
-      | 'fxUSDBasePool'
-      | 'gaugeUSDCfxUSD') || 'usdc'
+    (process.env.FXSAVE_TOKEN_IN as 'usdc' | 'fxUSD' | 'fxUSDBasePool') ||
+    'usdc'
   const amountWei = process.env.FXSAVE_AMOUNT_WEI
     ? BigInt(process.env.FXSAVE_AMOUNT_WEI)
     : tokenIn === 'usdc'

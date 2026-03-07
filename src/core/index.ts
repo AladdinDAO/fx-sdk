@@ -493,7 +493,7 @@ export class FxSdk {
   }
 
   /**
-   * Builds deposit tx(s) for fxSAVE. Supports USDC, fxUSD, fxUSD Base Pool, gauge.
+   * Builds deposit tx(s) for fxSAVE. Supports USDC, fxUSD, fxUSD Base Pool.
    */
   async depositFxSave(
     request: FxSaveDepositRequest

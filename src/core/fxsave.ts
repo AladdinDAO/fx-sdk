@@ -34,7 +34,6 @@ function resolveTokenAddress(token: FxSaveTokenIn): string {
     usdc: tokens.usdc,
     fxUSD: tokens.fxUSD,
     fxUSDBasePool: tokens.fxUSDBasePool,
-    gaugeUSDCfxUSD: tokens.gaugeUSDCfxUSD,
   }
   return map[token]
 }
@@ -208,7 +207,7 @@ function getDepositSpender(tokenIn: FxSaveTokenIn): string {
 }
 
 /**
- * Builds deposit tx(s) for fxSAVE. Supports USDC, fxUSD, fxUSD Base Pool (Stability Pool), and optional gauge.
+ * Builds deposit tx(s) for fxSAVE. Supports USDC, fxUSD, and fxUSD Base Pool (Stability Pool).
  * Automatically checks allowance and prepends an approve tx when needed.
  */
 export async function depositFxSave(
@@ -251,24 +250,6 @@ export async function depositFxSave(
     })
     txs.push({
       type: 'deposit',
-      from: userAddress,
-      to: contracts.FxSave_fxSAVE,
-      data,
-      value: 0n,
-      nonce: nonce++,
-      chainId,
-    })
-    return { txs }
-  }
-
-  if (tokenIn === 'gaugeUSDCfxUSD') {
-    const data = encodeFunctionData({
-      abi: SavingFxUSDAbi,
-      functionName: 'depositGauge',
-      args: [amount, userAddress as `0x${string}`],
-    })
-    txs.push({
-      type: 'depositGauge',
       from: userAddress,
       to: contracts.FxSave_fxSAVE,
       data,
