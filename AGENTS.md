@@ -37,7 +37,7 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 | **getFxSaveClaimable** | Redeem status plus preview receive (fxUSD + USDC from previewRedeem). Use to show "Min Receive" before claim. Read-only. |
 | **getRedeemTx** | Build claim tx after cooldown (`claim(receiver)`). Call when isCooldownComplete; returns `{ txs }`. |
 | **depositFxSave** | Deposit into fxSAVE: tokenIn `usdc`\|`fxUSD`\|`fxUSDBasePool`, amount wei, optional slippage. Returns `{ txs }`. |
-| **withdrawFxSave** | Withdraw: tokenOut `fxUSDBasePool` → redeem; usdc/fxUSD → requestRedeem or instant (instant needs slippage). Returns `{ txs }`. |
+| **withdrawFxSave** | Withdraw: tokenOut `fxUSDBasePool` → redeem; `usdc`/`fxUSD` → requestRedeem or instant (instant needs slippage). Returns `{ txs }`. |
 
 ## Markets
 

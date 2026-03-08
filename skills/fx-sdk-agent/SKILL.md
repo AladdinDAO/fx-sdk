@@ -70,12 +70,18 @@ const sdk = new FxSdk({ rpcUrl, chainId: 1 })
 
 Honor SDK token checks:
 
-- ETH market common tokens: `eth`, `stETH`, `weth`, `wstETH`, `usdc`, `usdt`, `fxUSD`
-- BTC market common tokens: `WBTC`, `usdc`, `usdt`, `fxUSD`
-- `depositAndMint` / `repayAndWithdraw`:
-- ETH long: `eth|stETH|weth|wstETH`
-- BTC long: `WBTC`
-- **fxSAVE** `tokenIn`: `usdc` | `fxUSD` | `fxUSDBasePool`. `tokenOut`: same; `fxUSDBasePool` uses direct redeem; usdc/fxUSD use requestRedeem (cooldown) or instant (fee + slippage). Amounts in wei (18 decimals for fxSAVE shares; 6 for USDC).
+- **Position (ETH/BTC)**  
+  - ETH market: `eth`, `stETH`, `weth`, `wstETH`, `usdc`, `usdt`, `fxUSD`  
+  - BTC market: `WBTC`, `usdc`, `usdt`, `fxUSD`
+
+- **depositAndMint / repayAndWithdraw** (long only)  
+  - ETH long: `eth` | `stETH` | `weth` | `wstETH`  
+  - BTC long: `WBTC`
+
+- **fxSAVE**  
+  - `tokenIn` / `tokenOut`: `usdc` | `fxUSD` | `fxUSDBasePool`  
+  - `fxUSDBasePool` → direct redeem; `usdc`/`fxUSD` → requestRedeem (cooldown) or instant (fee + slippage)  
+  - Amounts in wei (18 decimals for fxSAVE shares; 6 for USDC)
 
 ## Output Style For Agent Tasks
 
