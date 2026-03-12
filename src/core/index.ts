@@ -2,10 +2,11 @@ import { getClient } from '@/core/client'
 import { isAddress } from 'viem'
 import { Position } from '@/core/position'
 import { Pool } from '@/core/pool'
-import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest, Market, PositionType, BridgeQuoteRequest, BridgeQuoteResult, BuildBridgeTxRequest, BuildBridgeTxResult, GetFxSaveBalanceRequest, GetFxSaveBalanceResult, GetFxSaveRedeemStatusRequest, GetFxSaveRedeemStatusResult, GetFxSaveClaimableRequest, GetFxSaveClaimableResult, GetRedeemTxRequest, GetRedeemTxResult, FxSaveDepositRequest, FxSaveDepositResult, FxSaveWithdrawRequest, FxSaveWithdrawResult } from '@/types'
+import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest, Market, PositionType, BridgeQuoteRequest, BridgeQuoteResult, BuildBridgeTxRequest, BuildBridgeTxResult, GetFxSaveBalanceRequest, GetFxSaveBalanceResult, GetFxSaveConfigRequest, GetFxSaveConfigResult, GetFxSaveRedeemStatusRequest, GetFxSaveRedeemStatusResult, GetFxSaveClaimableRequest, GetFxSaveClaimableResult, GetRedeemTxRequest, GetRedeemTxResult, FxSaveDepositRequest, FxSaveDepositResult, FxSaveWithdrawRequest, FxSaveWithdrawResult } from '@/types'
 import { getBridgeQuote as getBridgeQuoteImpl, buildBridgeTx as buildBridgeTxImpl } from '@/bridge'
 import {
   getFxSaveBalance as getFxSaveBalanceImpl,
+  getFxSaveConfig as getFxSaveConfigImpl,
   getFxSaveRedeemStatus as getFxSaveRedeemStatusImpl,
   getFxSaveClaimable as getFxSaveClaimableImpl,
   getRedeemTx as getRedeemTxImpl,
@@ -475,6 +476,15 @@ export class FxSdk {
     request: GetFxSaveBalanceRequest
   ): Promise<GetFxSaveBalanceResult> {
     return getFxSaveBalanceImpl(request)
+  }
+
+  /**
+   * Gets fxSAVE protocol totals and config (total supply, total assets, cooldown period, fee ratios).
+   */
+  async getFxSaveConfig(
+    request?: GetFxSaveConfigRequest
+  ): Promise<GetFxSaveConfigResult> {
+    return getFxSaveConfigImpl(request)
   }
 
   /**

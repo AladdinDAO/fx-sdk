@@ -33,6 +33,7 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 | **getBridgeQuote** | Fee quote for LayerZero V2 bridge Base <-> Ethereum (fxUSD, fxSAVE). |
 | **buildBridgeTx** | Build bridge tx payload (`to`, `data`, `value`); send on source chain. |
 | **getFxSaveBalance** | fxSAVE balance (shares wei, optional assets wei). Read-only. |
+| **getFxSaveConfig** | fxSAVE protocol totals and config (total supply, total assets, cooldown period, fee ratios). Read-only; no user address required. |
 | **getFxSaveRedeemStatus** | Pending redeem amount, cooldown period, redeemableAt, isCooldownComplete. Read-only. |
 | **getFxSaveClaimable** | Redeem status plus preview receive (fxUSD + USDC from previewRedeem). Use to show "Min Receive" before claim. Read-only. |
 | **getRedeemTx** | Build claim tx after cooldown (`claim(receiver)`). Call when isCooldownComplete; returns `{ txs }`. |
@@ -65,6 +66,7 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 - **getBridgeQuote**: `{ nativeFee, lzTokenFee }` (wei). Use source chain RPC.
 - **buildBridgeTx**: `{ tx: { to, data, value }, quote }`. Send single `tx` on source chain (1 or 8453).
 - **getFxSaveBalance**: `{ balanceWei, assetsWei? }`.
+- **getFxSaveConfig**: `{ totalSupplyWei, totalAssetsWei, cooldownPeriodSeconds, instantRedeemFeeRatio, expenseRatio, harvesterRatio, threshold }` (all wei).
 - **getFxSaveRedeemStatus**: `{ hasPendingRedeem, pendingSharesWei, cooldownPeriodSeconds, redeemableAt, isCooldownComplete }`.
 - **getFxSaveClaimable**: extends redeem status with optional `previewReceive?: { amountYieldOutWei, amountStableOutWei }` (fxUSD + USDC from FxUSDBasePool.previewRedeem).
 - **getRedeemTx / depositFxSave / withdrawFxSave**: `{ txs }`; execute in order (same shape as depositAndMint txs).
@@ -88,6 +90,7 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 
 ## fxSAVE (Ethereum)
 
+- **Config (totals & params)**: `getFxSaveConfig()` → totalSupplyWei, totalAssetsWei, cooldownPeriodSeconds, instantRedeemFeeRatio, expenseRatio, harvesterRatio, threshold. No user address required.
 - **Balance**: `getFxSaveBalance({ userAddress })` → shares wei, optional assets wei.
 - **Redeem status**: `getFxSaveRedeemStatus({ userAddress })` → hasPendingRedeem, pendingSharesWei, redeemableAt (timestamp), isCooldownComplete. Display as "X fxUSD Stability Pool Tokens can be claimed now" or "can be withdrawn after [date]".
 - **Claimable (preview receive)**: `getFxSaveClaimable({ userAddress })` → same as redeem status plus `previewReceive: { amountYieldOutWei, amountStableOutWei }` (fxUSD + USDC from previewRedeem; align with app ClaimModal Min Receive).

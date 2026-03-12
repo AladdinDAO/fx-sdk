@@ -211,6 +211,26 @@ const result = await sdk.buildBridgeTx({
 
 When bridging **from Ethereum**, approve the bridge contract (`result.tx.to`) to spend your token (e.g. fxUSD) before sending the bridge tx. See `example/layerzero-bridge.ts` for a full script.
 
+### fxSAVE (Ethereum)
+
+fxSAVE is a yield product on Ethereum. Query protocol totals and config (no user address required), or user balance and redeem status.
+
+**Protocol config (totals & cooldown):**
+
+```typescript
+const config = await sdk.getFxSaveConfig()
+// config: { totalSupplyWei, totalAssetsWei, cooldownPeriodSeconds, instantRedeemFeeRatio, expenseRatio, harvesterRatio, threshold } (all wei)
+```
+
+**User balance:**
+
+```typescript
+const balance = await sdk.getFxSaveBalance({ userAddress: '0x...' })
+// balance: { balanceWei, assetsWei? }
+```
+
+For redeem status, claimable preview, claim, deposit, and withdraw, see `getFxSaveRedeemStatus`, `getFxSaveClaimable`, `getRedeemTx`, `depositFxSave`, `withdrawFxSave` in [AGENTS.md](./AGENTS.md). Examples: `example/get-fxsave-config.ts`, `example/get-fxsave-balance.ts`, `example/fxsave-claim.ts`, `example/fxsave-deposit.ts`, `example/fxsave-withdraw.ts`.
+
 ## Supported Markets
 
 The SDK supports the following markets and position types:
@@ -493,10 +513,10 @@ By using this SDK, you acknowledge that you understand and accept all risks asso
 
 ## Agent-friendly usage
 
-- **[AGENTS.md](./AGENTS.md)** — When to use each operation, parameter rules, errors (including fxSAVE: balance, redeem status, **getFxSaveClaimable** for claim preview, claim, deposit, withdraw).
+- **[AGENTS.md](./AGENTS.md)** — When to use each operation, parameter rules, errors (including fxSAVE: **getFxSaveConfig** for totals/cooldown, balance, redeem status, **getFxSaveClaimable** for claim preview, claim, deposit, withdraw).
 - **Type exports** — Request/response types exported from the package.
 - **[agent-tools.json](./agent-tools.json)** — JSON Schema for tool registration; amounts are decimal strings, convert to `bigint` before calling the SDK.
-- **Examples** — `example/fxsave-claim.ts`: redeem status, claimable preview (getFxSaveClaimable), and claim flow.
+- **Examples** — `example/get-fxsave-config.ts`: protocol totals and config; `example/get-fxsave-balance.ts`: user balance; `example/fxsave-claim.ts`: redeem status, claimable preview (getFxSaveClaimable), and claim flow.
 
 ## License
 

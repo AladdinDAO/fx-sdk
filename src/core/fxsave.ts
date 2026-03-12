@@ -10,6 +10,8 @@ import MultiPathConverterAbi from '@/abis/MultiPathConverter.json'
 import type {
   GetFxSaveBalanceRequest,
   GetFxSaveBalanceResult,
+  GetFxSaveConfigRequest,
+  GetFxSaveConfigResult,
   GetFxSaveRedeemStatusRequest,
   GetFxSaveRedeemStatusResult,
   GetFxSaveClaimableRequest,
@@ -71,6 +73,61 @@ export async function getFxSaveBalance(
   }
 
   return { balanceWei, assetsWei }
+}
+
+/**
+ * Gets fxSAVE protocol totals and config (total supply, total assets, cooldown period, fee ratios, etc.).
+ */
+export async function getFxSaveConfig(
+  _request?: GetFxSaveConfigRequest
+): Promise<GetFxSaveConfigResult> {
+  const client = getClient()
+  const [totalSupplyWei, totalAssetsWei, cooldownPeriodSeconds, instantRedeemFeeRatio, expenseRatio, harvesterRatio, threshold] = await Promise.all([
+    client.readContract({
+      address: contracts.FxSave_fxSAVE as `0x${string}`,
+      abi: SavingFxUSDAbi,
+      functionName: 'totalSupply',
+    }) as Promise<bigint>,
+    client.readContract({
+      address: contracts.FxSave_fxSAVE as `0x${string}`,
+      abi: SavingFxUSDAbi,
+      functionName: 'totalAssets',
+    }) as Promise<bigint>,
+    client.readContract({
+      address: contracts.FxUSDBasePool as `0x${string}`,
+      abi: FxUSDBasePoolAbi,
+      functionName: 'redeemCoolDownPeriod',
+    }) as Promise<bigint>,
+    client.readContract({
+      address: contracts.FxUSDBasePool as `0x${string}`,
+      abi: FxUSDBasePoolAbi,
+      functionName: 'instantRedeemFeeRatio',
+    }) as Promise<bigint>,
+    client.readContract({
+      address: contracts.FxSave_fxSAVE as `0x${string}`,
+      abi: SavingFxUSDAbi,
+      functionName: 'getExpenseRatio',
+    }) as Promise<bigint>,
+    client.readContract({
+      address: contracts.FxSave_fxSAVE as `0x${string}`,
+      abi: SavingFxUSDAbi,
+      functionName: 'getHarvesterRatio',
+    }) as Promise<bigint>,
+    client.readContract({
+      address: contracts.FxSave_fxSAVE as `0x${string}`,
+      abi: SavingFxUSDAbi,
+      functionName: 'getThreshold',
+    }) as Promise<bigint>,
+  ])
+  return {
+    totalSupplyWei,
+    totalAssetsWei,
+    cooldownPeriodSeconds,
+    instantRedeemFeeRatio,
+    expenseRatio,
+    harvesterRatio,
+    threshold,
+  }
 }
 
 /**
@@ -554,6 +611,8 @@ export async function withdrawFxSave(
 export type {
   GetFxSaveBalanceRequest,
   GetFxSaveBalanceResult,
+  GetFxSaveConfigRequest,
+  GetFxSaveConfigResult,
   GetFxSaveRedeemStatusRequest,
   GetFxSaveRedeemStatusResult,
   GetFxSaveClaimableRequest,

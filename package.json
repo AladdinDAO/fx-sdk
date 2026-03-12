@@ -46,6 +46,7 @@
     "example:adjust": "tsx example/adjust-position-leverage.ts",
     "example:bridge": "tsx example/layerzero-bridge.ts",
     "example:fxsave-balance": "tsx example/get-fxsave-balance.ts",
+    "example:fxsave-config": "tsx example/get-fxsave-config.ts",
     "example:fxsave-deposit": "tsx example/fxsave-deposit.ts",
     "example:fxsave-withdraw": "tsx example/fxsave-withdraw.ts",
     "example:fxsave-claim": "tsx example/fxsave-claim.ts"

@@ -139,6 +139,14 @@ for (const tx of route.txs) {
 { ...quote, refundAddress?: string }
 ```
 
+### fxSAVE — Config (totals & cooldown)
+
+```ts
+// No params required
+sdk.getFxSaveConfig()
+// → { totalSupplyWei, totalAssetsWei, cooldownPeriodSeconds, instantRedeemFeeRatio, expenseRatio, harvesterRatio, threshold } (all bigint wei)
+```
+
 ### fxSAVE — Balance
 
 ```ts
@@ -205,8 +213,9 @@ for (const tx of route.txs) {
    - Deposit and mint: `npm run example:deposit`
    - Repay and withdraw: `npm run example:repay`
    - Bridge: `npm run example:bridge`
-   - fxSAVE balance: `npm run example:fxsave-balance`
-   - fxSAVE deposit: `npm run example:fxsave-deposit`
+  - fxSAVE balance: `npm run example:fxsave-balance`
+  - fxSAVE config: `npm run example:fxsave-config`
+  - fxSAVE deposit: `npm run example:fxsave-deposit`
    - fxSAVE withdraw: `npm run example:fxsave-withdraw`
    - fxSAVE claim: `npm run example:fxsave-claim`
 

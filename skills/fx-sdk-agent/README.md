@@ -46,7 +46,7 @@ The assistant will load `SKILL.md` from the skill directory when the context mat
 ## When to Use
 
 - Integrate `@aladdindao/fx-sdk` into an agent or tool.
-- Generate transaction execution code for positions (increase/reduce/adjust), deposit/repay, bridge (Base <-> Ethereum), and fxSAVE (balance, redeem status, claimable, deposit, withdraw, claim).
+- Generate transaction execution code for positions (increase/reduce/adjust), deposit/repay, bridge (Base <-> Ethereum), and fxSAVE (config/totals, balance, redeem status, claimable, deposit, withdraw, claim).
 - Debug SDK parameters or validate FX trading workflows.
 - Build adapter functions with typed input, dry-run, and nonce-ordered execution.
 

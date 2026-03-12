@@ -23,6 +23,27 @@ export interface GetFxSaveBalanceResult {
   assetsWei?: bigint
 }
 
+/** Request for getFxSaveConfig (no params required). */
+export interface GetFxSaveConfigRequest {}
+
+/** Result of getFxSaveConfig (fxSAVE protocol totals and config). */
+export interface GetFxSaveConfigResult {
+  /** Total fxSAVE shares in circulation (wei). */
+  totalSupplyWei: bigint
+  /** Total assets backing fxSAVE (wei). */
+  totalAssetsWei: bigint
+  /** Redeem cooldown period in seconds (from FxUSDBasePool). */
+  cooldownPeriodSeconds: bigint
+  /** Instant redeem fee ratio (wei, from FxUSDBasePool). */
+  instantRedeemFeeRatio: bigint
+  /** Expense ratio from SavingFxUSD (wei). */
+  expenseRatio: bigint
+  /** Harvester ratio from SavingFxUSD (wei). */
+  harvesterRatio: bigint
+  /** Threshold from SavingFxUSD (wei). */
+  threshold: bigint
+}
+
 /** Request for getFxSaveRedeemStatus (Cooldown state). */
 export interface GetFxSaveRedeemStatusRequest {
   /** User's wallet address. */

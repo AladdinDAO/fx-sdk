@@ -6,7 +6,7 @@ This folder holds canonical reference material for the **fx-sdk-agent** skill. U
 
 | File | Purpose |
 |------|---------|
-| **sdk-playbook.md** | Request shapes (templates) for every SDK method, minimal code snippets (read-only, tx planning, sequential execution), and a validation checklist. Use when you need the exact parameter shape for `getPositions`, `increasePosition`, `reducePosition`, `adjustPositionLeverage`, `depositAndMint`, `repayAndWithdraw`, bridge, or fxSAVE (balance, redeem status, claimable, getRedeemTx, deposit, withdraw). |
+| **sdk-playbook.md** | Request shapes (templates) for every SDK method, minimal code snippets (read-only, tx planning, sequential execution), and a validation checklist. Use when you need the exact parameter shape for `getPositions`, `increasePosition`, `reducePosition`, `adjustPositionLeverage`, `depositAndMint`, `repayAndWithdraw`, bridge, or fxSAVE (config, balance, redeem status, claimable, getRedeemTx, deposit, withdraw). |
 | **agent-adapter-example.ts** | Typed adapter pattern: `FxAction` union (all action kinds including fxSAVE), `runFxAction(action, options)` with `planOnly`, and sample payloads. Use when building an agent that dispatches to SDK methods from a single entry point or from tool schemas (e.g. `agent-tools.json`). |
 
 ## When to read which
