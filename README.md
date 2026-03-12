@@ -175,6 +175,62 @@ const result = await sdk.repayAndWithdraw({
 })
 ```
 
+### Bridge (Base <-> Ethereum)
+
+Bridge tokens between Ethereum and Base via LayerZero V2 (fxUSD, fxSAVE). Quote first, then build the tx and send on the **source** chain.
+
+```typescript
+import { FxSdk } from '@aladdindao/fx-sdk'
+
+const sdk = new FxSdk({ rpcUrl: sourceRpcUrl, chainId: sourceChainId }) // source chain: 1 or 8453
+
+// 1. Get fee quote
+const quote = await sdk.getBridgeQuote({
+  sourceChainId: 1,       // 1 = Ethereum, 8453 = Base
+  destChainId: 8453,      // must differ from sourceChainId
+  token: 'fxUSD',         // 'fxUSD' | 'fxSAVE' or OFT address
+  amount: 100000000000000000n, // 0.1 in wei (18 decimals)
+  recipient: '0x...',     // destination address
+})
+// quote: { nativeFee, lzTokenFee } in wei
+
+// 2. Build tx payload
+const result = await sdk.buildBridgeTx({
+  sourceChainId: 1,
+  destChainId: 8453,
+  token: 'fxUSD',
+  amount: 100000000000000000n,
+  recipient: '0x...',
+  refundAddress: '0x...', // optional; defaults to recipient
+})
+// result.tx: { to, data, value } — send this on source chain
+// result.quote: same as getBridgeQuote
+
+// 3. Send the tx (e.g. with viem walletClient.sendTransaction(result.tx))
+```
+
+When bridging **from Ethereum**, approve the bridge contract (`result.tx.to`) to spend your token (e.g. fxUSD) before sending the bridge tx. See `example/layerzero-bridge.ts` for a full script.
+
+### fxSAVE (Ethereum)
+
+fxSAVE is a yield product on Ethereum. Query protocol totals and config (no user address required), or user balance and redeem status.
+
+**Protocol config (totals & cooldown):**
+
+```typescript
+const config = await sdk.getFxSaveConfig()
+// config: { totalSupplyWei, totalAssetsWei, cooldownPeriodSeconds, instantRedeemFeeRatio, expenseRatio, harvesterRatio, threshold } (all wei)
+```
+
+**User balance:**
+
+```typescript
+const balance = await sdk.getFxSaveBalance({ userAddress: '0x...' })
+// balance: { balanceWei, assetsWei? }
+```
+
+For redeem status, claimable preview, claim, deposit, and withdraw, see `getFxSaveRedeemStatus`, `getFxSaveClaimable`, `getRedeemTx`, `depositFxSave`, `withdrawFxSave` in [AGENTS.md](./AGENTS.md). Examples: `example/get-fxsave-config.ts`, `example/get-fxsave-balance.ts`, `example/fxsave-claim.ts`, `example/fxsave-deposit.ts`, `example/fxsave-withdraw.ts`.
+
 ## Supported Markets
 
 The SDK supports the following markets and position types:
@@ -315,10 +371,15 @@ interface GetPositionsRequest {
 
 ```typescript
 interface PositionInfo {
-  rawColls: bigint      // Raw collateral amount
-  rawDebts: bigint      // Raw debt amount
-  currentLeverage: number  // Current leverage multiplier
-  lsdLeverage: number   // LSD leverage multiplier
+  positionId: number
+  rawColls: bigint           // Raw collateral amount (wei)
+  rawDebts: bigint           // Raw debt amount (wei)
+  currentLeverage: number    // Current leverage multiplier
+  lsdLeverage: number        // LSD leverage multiplier
+  rawCollsToken: string      // Collateral token symbol (e.g. 'wstETH', 'WBTC')
+  rawDebtsToken: string      // Debt token symbol (e.g. 'fxUSD')
+  rawCollsDecimals: number   // Collateral decimals (typically 18)
+  rawDebtsDecimals: number   // Debt decimals (typically 18)
 }
 ```
 
@@ -346,6 +407,27 @@ export interface RepayAndWithdrawRequest {
 }
 ```
 
+### Bridge (Base <-> Ethereum)
+
+```typescript
+// Quote
+interface BridgeQuoteRequest {
+  sourceChainId: 1 | 8453  // Ethereum or Base
+  destChainId: 1 | 8453    // must differ from sourceChainId
+  token: string            // 'fxUSD' | 'fxSAVE' or OFT address on source chain
+  amount: bigint
+  recipient: string
+  sourceRpcUrl?: string
+}
+// Result: { nativeFee: bigint, lzTokenFee: bigint }
+
+// Build tx
+interface BuildBridgeTxRequest extends BridgeQuoteRequest {
+  refundAddress?: string
+}
+// Result: { tx: { to, data, value }, quote }
+```
+
 ## Important Notes
 
 1. **Amount Units**: All amounts use wei units (bigint). For example, 1 ETH = `1000000000000000000n` (10^18).
@@ -361,6 +443,8 @@ export interface RepayAndWithdrawRequest {
 5. **RPC Client**: The SDK uses a singleton pattern to manage the RPC client, with only one client instance globally. The configuration passed during first initialization is used, and subsequent calls reuse the same client.
 
 6. **Error Handling**: All methods may throw errors, please use try-catch for error handling.
+
+7. **Bridge**: Only Ethereum (1) and Base (8453) are supported. Use `getBridgeQuote` then `buildBridgeTx`; send the returned `tx` on the source chain. When the source is Ethereum, approve `tx.to` (RootEndPointV2) to spend your token first. See `example/layerzero-bridge.ts`.
 
 ## Example
 
@@ -429,9 +513,10 @@ By using this SDK, you acknowledge that you understand and accept all risks asso
 
 ## Agent-friendly usage
 
-- **[AGENTS.md](./AGENTS.md)** — When to use each operation, parameter rules, errors.
+- **[AGENTS.md](./AGENTS.md)** — When to use each operation, parameter rules, errors (including fxSAVE: **getFxSaveConfig** for totals/cooldown, balance, redeem status, **getFxSaveClaimable** for claim preview, claim, deposit, withdraw).
 - **Type exports** — Request/response types exported from the package.
 - **[agent-tools.json](./agent-tools.json)** — JSON Schema for tool registration; amounts are decimal strings, convert to `bigint` before calling the SDK.
+- **Examples** — `example/get-fxsave-config.ts`: protocol totals and config; `example/get-fxsave-balance.ts`: user balance; `example/fxsave-claim.ts`: redeem status, claimable preview (getFxSaveClaimable), and claim flow.
 
 ## License
 

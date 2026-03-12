@@ -1,5 +1,5 @@
 import AFPoolAbi from '@/abis/AFPool.json'
-import { AdjustPositionLeverageRequest, ConvertData, DepositAndMintRequest, IncreasePositionRequest, PoolInfo, ReducePositionRequest, RepayAndWithdrawRequest } from '@/types'
+import { AdjustPositionLeverageRequest, ConvertData, DepositAndMintRequest, IncreasePositionRequest, PoolInfo, PositionInfo, ReducePositionRequest, RepayAndWithdrawRequest } from '@/types'
 import { FxRoute } from '@/core/aggregators/fxRoute'
 import { tokens } from '@/configs/tokens'
 import { cBN, getLeverage } from '@/utils'
@@ -75,9 +75,9 @@ export class Position {
 
   /**
    * Gets detailed position information including leverage calculations.
-   * @returns Object containing position ID, raw collateral/debt, current leverage, and LSD leverage
+   * @returns Object containing position ID, raw collateral/debt, leverage, and token/symbol info
    */
-  async getPositionInfo() {
+  async getPositionInfo(): Promise<PositionInfo> {
     const position = await this.getPosition()
     const { rawColls, rawDebts } = position
 
@@ -86,6 +86,8 @@ export class Position {
       isShort,
       rateRes,
       averagePrice: price,
+      collSymbol,
+      debtSymbol,
     } = this.poolInfo
 
     const _isClosed = cBN(rawColls).lt(5 * minPrecision)
@@ -112,10 +114,12 @@ export class Position {
       rawColls,
       rawDebts,
       currentLeverage,
-      lsdLeverage: isShort ? currentLeverage - 1 : currentLeverage
+      lsdLeverage: isShort ? currentLeverage - 1 : currentLeverage,
+      rawCollsToken: collSymbol,
+      rawDebtsToken: debtSymbol,
+      rawCollsDecimals: 18,
+      rawDebtsDecimals: 18,
     }
-
-    console.log('positionInfo-->', positionInfo)
 
     return positionInfo
   }

@@ -25,11 +25,20 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 | Operation | When to use |
 |-----------|-------------|
 | **getPositions** | List positions for market+type (read-only). Use to get `positionId` before other ops. |
-| **increasePosition** | Open new (`positionId: 0`) or add to existing. Returns `routes` with `txs`. |
+| **increasePosition** | Open new (`positionId: 0`) or add to existing. Returns `routes` with `txs`. Optional `targets` for route types. |
 | **reducePosition** | Reduce size or close; `isClosePosition: true` to close fully. |
 | **adjustPositionLeverage** | Change leverage of existing position. |
 | **depositAndMint** | Long only: deposit collateral, mint fxUSD. |
 | **repayAndWithdraw** | Long only: repay fxUSD, withdraw collateral. |
+| **getBridgeQuote** | Fee quote for LayerZero V2 bridge Base <-> Ethereum (fxUSD, fxSAVE). |
+| **buildBridgeTx** | Build bridge tx payload (`to`, `data`, `value`); send on source chain. |
+| **getFxSaveBalance** | fxSAVE balance (shares wei, optional assets wei). Read-only. |
+| **getFxSaveConfig** | fxSAVE protocol totals and config (total supply, total assets, cooldown period, fee ratios). Read-only; no user address required. |
+| **getFxSaveRedeemStatus** | Pending redeem amount, cooldown period, redeemableAt, isCooldownComplete. Read-only. |
+| **getFxSaveClaimable** | Redeem status plus preview receive (fxUSD + USDC from previewRedeem). Use to show "Min Receive" before claim. Read-only. |
+| **getRedeemTx** | Build claim tx after cooldown (`claim(receiver)`). Call when isCooldownComplete; returns `{ txs }`. |
+| **depositFxSave** | Deposit into fxSAVE: tokenIn `usdc`\|`fxUSD`\|`fxUSDBasePool`, amount wei, optional slippage. Returns `{ txs }`. |
+| **withdrawFxSave** | Withdraw: tokenOut `fxUSDBasePool` → redeem; `usdc`/`fxUSD` → requestRedeem or instant (instant needs slippage). Returns `{ txs }`. |
 
 ## Markets
 
@@ -51,9 +60,16 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 
 ## Return shapes
 
-- **getPositions**: `[{ positionId, rawColls, rawDebts, currentLeverage, lsdLeverage }]`.
+- **getPositions**: `[{ positionId, rawColls, rawDebts, currentLeverage, lsdLeverage, rawCollsToken, rawDebtsToken, rawCollsDecimals, rawDebtsDecimals }]` (PositionInfo).
 - **increasePosition / reducePosition / adjustPositionLeverage**: `{ positionId?, slippage, routes }`. Each route has `txs`; execute in order. Each `tx`: `type`, `from`, `to`, `data`, `nonce`, optional `value`.
 - **depositAndMint / repayAndWithdraw**: `{ txs }`; execute in order.
+- **getBridgeQuote**: `{ nativeFee, lzTokenFee }` (wei). Use source chain RPC.
+- **buildBridgeTx**: `{ tx: { to, data, value }, quote }`. Send single `tx` on source chain (1 or 8453).
+- **getFxSaveBalance**: `{ balanceWei, assetsWei? }`.
+- **getFxSaveConfig**: `{ totalSupplyWei, totalAssetsWei, cooldownPeriodSeconds, instantRedeemFeeRatio, expenseRatio, harvesterRatio, threshold }` (all wei).
+- **getFxSaveRedeemStatus**: `{ hasPendingRedeem, pendingSharesWei, cooldownPeriodSeconds, redeemableAt, isCooldownComplete }`.
+- **getFxSaveClaimable**: extends redeem status with optional `previewReceive?: { amountYieldOutWei, amountStableOutWei }` (fxUSD + USDC from FxUSDBasePool.previewRedeem).
+- **getRedeemTx / depositFxSave / withdrawFxSave**: `{ txs }`; execute in order (same shape as depositAndMint txs).
 
 ## Errors
 
@@ -62,6 +78,25 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 - "... must be a valid Ethereum address" → valid 0x or `tokens.*`.
 - "User is not the owner of this position" → caller must own `positionId`; use getPositions.
 - "Input/Output/Deposit/Withdraw token address must be ..." → use allowed token for market (see Parameter rules).
+- Bridge: "Unsupported bridge chainId" → use `sourceChainId`/`destChainId` in `[1, 8453]` and they must differ. "Unsupported bridge token" → use `fxUSD` or `fxSAVE`, or a valid OFT address.
+- fxSAVE: tokenIn/tokenOut use keys `usdc`, `fxUSD`, `fxUSDBasePool`. Instant withdraw only for usdc/fxUSD; slippage required when instant. Convert amount strings to bigint before calling.
+
+## Bridge (Base <-> Ethereum)
+
+- **Chains**: source and destination must be Ethereum (1) and Base (8453). Pass **source** chain `rpcUrl`/`chainId` when building the SDK or in the request.
+- **Tokens**: Pre-set keys `fxUSD`, `fxSAVE` (addresses aligned with layerzero-bridge). Or pass OFT contract address on source chain.
+- **Flow**: Call `getBridgeQuote({ sourceChainId, destChainId, token, amount, recipient })` for fees; then `buildBridgeTx({ ... same, refundAddress? })` to get `{ tx, quote }`. Send `tx` (to, data, value) on source chain.
+- **Ethereum as source**: User must approve the bridge contract (`tx.to`, i.e. RootEndPointV2) to spend the token (e.g. fxUSD) before sending the bridge tx.
+
+## fxSAVE (Ethereum)
+
+- **Config (totals & params)**: `getFxSaveConfig()` → totalSupplyWei, totalAssetsWei, cooldownPeriodSeconds, instantRedeemFeeRatio, expenseRatio, harvesterRatio, threshold. No user address required.
+- **Balance**: `getFxSaveBalance({ userAddress })` → shares wei, optional assets wei.
+- **Redeem status**: `getFxSaveRedeemStatus({ userAddress })` → hasPendingRedeem, pendingSharesWei, redeemableAt (timestamp), isCooldownComplete. Display as "X fxUSD Stability Pool Tokens can be claimed now" or "can be withdrawn after [date]".
+- **Claimable (preview receive)**: `getFxSaveClaimable({ userAddress })` → same as redeem status plus `previewReceive: { amountYieldOutWei, amountStableOutWei }` (fxUSD + USDC from previewRedeem; align with app ClaimModal Min Receive).
+- **Claim**: When isCooldownComplete, call `getRedeemTx({ userAddress, receiver? })` to get claim tx(s); send in order.
+- **Deposit**: `depositFxSave({ userAddress, tokenIn, amount, slippage? })`; tokenIn one of usdc, fxUSD, fxUSDBasePool. Sends approve + deposit txs.
+- **Withdraw**: `withdrawFxSave({ userAddress, tokenOut, amount, instant?, slippage? })`; tokenOut fxUSDBasePool → redeem; usdc/fxUSD and !instant → requestRedeem; usdc/fxUSD and instant → approve + instantRedeemFromFxSave.
 
 ## Tool schema
 

@@ -75,6 +75,10 @@ async function getPositions() {
         console.log(`  Raw Debt: ${position.rawDebts.toString()}`)
         console.log(`  Current Leverage: ${position.currentLeverage.toFixed(2)}x`)
         console.log(`  LSD Leverage: ${position.lsdLeverage.toFixed(2)}x`)
+        console.log(`  Raw Collateral Token: ${position.rawCollsToken}`)
+        console.log(`  Raw Debt Token: ${position.rawDebtsToken}`)
+        console.log(`  Raw Collateral Decimals: ${position.rawCollsDecimals}`)
+        console.log(`  Raw Debt Decimals: ${position.rawDebtsDecimals}`)
         console.log('')
       })
     }
@@ -96,6 +100,10 @@ async function getPositions() {
         console.log(`  Raw Debt: ${position.rawDebts.toString()}`)
         console.log(`  Current Leverage: ${position.currentLeverage.toFixed(2)}x`)
         console.log(`  LSD Leverage: ${position.lsdLeverage.toFixed(2)}x`)
+        console.log(`  Raw Collateral Token: ${position.rawCollsToken}`)
+        console.log(`  Raw Debt Token: ${position.rawDebtsToken}`)
+        console.log(`  Raw Collateral Decimals: ${position.rawCollsDecimals}`)
+        console.log(`  Raw Debt Decimals: ${position.rawDebtsDecimals}`)
         console.log('')
       })
     }
@@ -117,6 +125,10 @@ async function getPositions() {
         console.log(`  Raw Debt: ${position.rawDebts.toString()}`)
         console.log(`  Current Leverage: ${position.currentLeverage.toFixed(2)}x`)
         console.log(`  LSD Leverage: ${position.lsdLeverage.toFixed(2)}x`)
+        console.log(`  Raw Collateral Token: ${position.rawCollsToken}`)
+        console.log(`  Raw Debt Token: ${position.rawDebtsToken}`)
+        console.log(`  Raw Collateral Decimals: ${position.rawCollsDecimals}`)
+        console.log(`  Raw Debt Decimals: ${position.rawDebtsDecimals}`)
         console.log('')
       })
     }

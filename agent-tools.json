@@ -35,6 +35,25 @@
       "exclusiveMinimum": true,
       "exclusiveMaximum": true,
       "description": "Slippage in percent (e.g. 1 = 1%)"
+    },
+    "sourceChainId": {
+      "type": "integer",
+      "enum": [1, 8453],
+      "description": "Source chain: 1 = Ethereum, 8453 = Base"
+    },
+    "destChainId": {
+      "type": "integer",
+      "enum": [1, 8453],
+      "description": "Destination chain: 1 = Ethereum, 8453 = Base"
+    },
+    "bridgeToken": {
+      "type": "string",
+      "description": "Token key (e.g. fxUSD, fxSAVE) or OFT address on source chain"
+    },
+    "fxsaveTokenIn": {
+      "type": "string",
+      "enum": ["usdc", "fxUSD", "fxUSDBasePool"],
+      "description": "fxSAVE deposit/withdraw token key"
     }
   },
   "tools": [
@@ -133,6 +152,113 @@
           "withdrawTokenAddress": { "$ref": "#/definitions/tokenAddress" }
         },
         "required": ["market", "positionId", "userAddress", "repayAmountWei", "withdrawAmountWei", "withdrawTokenAddress"]
+      }
+    },
+    {
+      "name": "getBridgeQuote",
+      "description": "Get LayerZero V2 bridge fee quote for Base <-> Ethereum OFT. Returns nativeFee and lzTokenFee in wei.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "sourceChainId": { "$ref": "#/definitions/sourceChainId" },
+          "destChainId": { "$ref": "#/definitions/destChainId" },
+          "token": { "$ref": "#/definitions/bridgeToken" },
+          "amountWei": { "$ref": "#/definitions/amountWei" },
+          "recipient": { "$ref": "#/definitions/userAddress" },
+          "sourceRpcUrl": { "type": "string", "description": "Optional RPC URL for source chain" }
+        },
+        "required": ["sourceChainId", "destChainId", "token", "amountWei", "recipient"]
+      }
+    },
+    {
+      "name": "buildBridgeTx",
+      "description": "Build bridge tx payload (to, data, value) for Base <-> Ethereum via LayerZero V2 OFT. Send on source chain.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "sourceChainId": { "$ref": "#/definitions/sourceChainId" },
+          "destChainId": { "$ref": "#/definitions/destChainId" },
+          "token": { "$ref": "#/definitions/bridgeToken" },
+          "amountWei": { "$ref": "#/definitions/amountWei" },
+          "recipient": { "$ref": "#/definitions/userAddress" },
+          "refundAddress": { "$ref": "#/definitions/userAddress" },
+          "sourceRpcUrl": { "type": "string", "description": "Optional RPC URL for source chain" }
+        },
+        "required": ["sourceChainId", "destChainId", "token", "amountWei", "recipient"]
+      }
+    },
+    {
+      "name": "getFxSaveBalance",
+      "description": "Get user fxSAVE balance (shares wei and optional assets wei). Read-only.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" }
+        },
+        "required": ["userAddress"]
+      }
+    },
+    {
+      "name": "getFxSaveRedeemStatus",
+      "description": "Get cooldown status: pending redeem amount, redeemableAt, isCooldownComplete. Use before getRedeemTx.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" }
+        },
+        "required": ["userAddress"]
+      }
+    },
+    {
+      "name": "getFxSaveClaimable",
+      "description": "Redeem status plus preview receive (amountYieldOutWei, amountStableOutWei from previewRedeem — fxUSD + USDC to receive on claim). Use to show Min Receive before claim.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" }
+        },
+        "required": ["userAddress"]
+      }
+    },
+    {
+      "name": "getRedeemTx",
+      "description": "Build claim tx(s) after cooldown. Call when getFxSaveRedeemStatus returns isCooldownComplete true. Returns txs to execute in order.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "receiver": { "$ref": "#/definitions/userAddress", "description": "Receiver of claimed assets; defaults to userAddress" }
+        },
+        "required": ["userAddress"]
+      }
+    },
+    {
+      "name": "depositFxSave",
+      "description": "Deposit into fxSAVE. tokenIn: usdc, fxUSD, or fxUSDBasePool. Returns txs (approve + deposit); execute in order. Convert amountWei to bigint.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "tokenIn": { "$ref": "#/definitions/fxsaveTokenIn" },
+          "amountWei": { "$ref": "#/definitions/amountWei" },
+          "slippage": { "$ref": "#/definitions/slippagePercent", "description": "Optional; used for usdc/fxUSD deposit" }
+        },
+        "required": ["userAddress", "tokenIn", "amountWei"]
+      }
+    },
+    {
+      "name": "withdrawFxSave",
+      "description": "Withdraw from fxSAVE. tokenOut fxUSDBasePool → direct redeem; usdc/fxUSD with instant false → requestRedeem (cooldown); usdc/fxUSD with instant true → instant redeem (slippage required). Returns txs; execute in order. Convert amountWei to bigint.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "tokenOut": { "$ref": "#/definitions/fxsaveTokenIn" },
+          "amountWei": { "$ref": "#/definitions/amountWei" },
+          "instant": { "type": "boolean", "description": "True for instant withdraw (usdc/fxUSD only); false for requestRedeem or redeem", "default": false },
+          "slippage": { "$ref": "#/definitions/slippagePercent", "description": "Required when instant is true" }
+        },
+        "required": ["userAddress", "tokenOut", "amountWei"]
       }
     }
   ]

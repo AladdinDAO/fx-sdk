@@ -1,4 +1,4 @@
-export const RPC_URL = 'https://rpc.mevblocker.io/fast'
+export const RPC_URL = 'https://ethereum-rpc.publicnode.com'
 export const CHAIN_ID = 1
 
 export const PRECISION = 1e18

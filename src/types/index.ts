@@ -1,4 +1,6 @@
 export * from '@/types/pool'
+export * from '@/types/bridge'
+export * from '@/types/fxsave'
 import { ROUTE_TYPES } from '@/core/aggregators'
 
 /** Market type: 'ETH' or 'BTC' */
@@ -8,6 +10,28 @@ export type PositionType = 'long' | 'short'
 
 /** Supported token symbols */
 export type TokenSymbol = 'ETH' | 'wstETH' | 'stETH' | 'WBTC' | 'USDC' | 'USDT' | 'FXUSD'
+
+/** Position info returned by getPositionInfo / getPositions */
+export interface PositionInfo {
+  /** Position ID */
+  positionId: number
+  /** Raw collateral amount in wei */
+  rawColls: bigint
+  /** Raw debt amount in wei */
+  rawDebts: bigint
+  /** Current leverage multiplier */
+  currentLeverage: number
+  /** LSD leverage multiplier (short: currentLeverage - 1; long: currentLeverage) */
+  lsdLeverage: number
+  /** Collateral token symbol (e.g. 'wstETH', 'WBTC') */
+  rawCollsToken: string
+  /** Debt token symbol (e.g. 'fxUSD') */
+  rawDebtsToken: string
+  /** Collateral token decimals (typically 18) */
+  rawCollsDecimals: number
+  /** Debt token decimals (typically 18) */
+  rawDebtsDecimals: number
+}
 
 /** Price oracle data structure */
 export interface PriceOracle {

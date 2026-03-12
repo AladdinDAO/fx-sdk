@@ -1,7 +1,11 @@
 import { FxSdk, tokens } from '../src'
 import { privateKeyToAccount } from 'viem/accounts'
-import { createWalletClient, createPublicClient, http } from 'viem'
-import { mainnet } from 'viem/chains'
+import {
+  createWalletClient,
+  createPublicClient,
+  http,
+  defineChain,
+} from 'viem'
 import * as dotenv from 'dotenv'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -11,6 +15,15 @@ import { ROUTE_TYPES } from '../src/core/aggregators'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 dotenv.config({ path: join(__dirname, '.env') })
+
+function getChain(chainId: number, rpcUrl: string) {
+  return defineChain({
+    id: chainId,
+    name: `Chain ${chainId}`,
+    nativeCurrency: { decimals: 18, name: 'Ether', symbol: 'ETH' },
+    rpcUrls: { default: { http: [rpcUrl] } },
+  })
+}
 
 async function adjustPositionLeverage() {
   // Validate environment variables
@@ -31,6 +44,7 @@ async function adjustPositionLeverage() {
   // Initialize SDK
   const rpcUrl = process.env.RPC_URL || 'https://ethereum-rpc.publicnode.com'
   const chainId = process.env.CHAIN_ID ? parseInt(process.env.CHAIN_ID) : 1
+  const chain = getChain(chainId, rpcUrl)
 
   const sdk = new FxSdk({
     rpcUrl,
@@ -40,13 +54,13 @@ async function adjustPositionLeverage() {
   // Create wallet client for sending transactions
   const walletClient = createWalletClient({
     account,
-    chain: mainnet,
+    chain,
     transport: http(rpcUrl),
   })
 
   // Create public client for waiting transaction receipts
   const publicClient = createPublicClient({
-    chain: mainnet,
+    chain,
     transport: http(rpcUrl),
   })
 

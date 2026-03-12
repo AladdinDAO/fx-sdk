@@ -56,6 +56,9 @@ npm run example:repay
 
 # Adjust position leverage
 npm run example:adjust
+
+# LayerZero bridge (Base <-> Ethereum)
+npm run example:bridge
 ```
 
 ### Method 2: Using tsx directly
@@ -71,6 +74,9 @@ npx tsx example/reduce-position.ts
 
 # Get all positions
 npx tsx example/get-positions.ts
+
+# LayerZero bridge (Base <-> Ethereum)
+npx tsx example/layerzero-bridge.ts
 
 # Deposit and mint
 npx tsx example/deposit-and-mint.ts
@@ -179,6 +185,28 @@ The script will:
 - Display the new leverage after adjustment
 - Execute all required transactions sequentially
 
+### 7. layerzero-bridge.ts
+
+Example script for bridging tokens between **Base** and **Ethereum** via LayerZero V2 OFT.
+
+```bash
+npm run example:bridge
+# or
+npx tsx example/layerzero-bridge.ts
+```
+
+**Configuration:**
+
+- Set `CHAIN_ID` to the **source** chain: `1` (Ethereum) or `8453` (Base). The script will bridge **to** the other chain.
+- The example bridges **fxUSD** (0.1 tokens). Edit the script to change token or amount.
+- Optional: `BRIDGE_RECIPIENT` – destination address (default: same as wallet).
+
+**Notes:**
+
+- Only Base (8453) and Ethereum (1) are supported.
+- Ensure the wallet holds the token to bridge and enough native gas to cover the bridge fee (`value` of the tx).
+- When bridging from **Ethereum**, approve the bridge contract (the `tx.to` address) to spend your fxUSD before sending the bridge tx.
+
 ## Environment Variables
 
 ### PRIVATE_KEY (Required)
@@ -191,7 +219,11 @@ RPC node URL, defaults to `https://ethereum-rpc.publicnode.com`.
 
 ### CHAIN_ID (Optional)
 
-Chain ID, defaults to `1` (mainnet).
+Chain ID, defaults to `1` (mainnet). For `layerzero-bridge.ts`, use `1` (Ethereum) or `8453` (Base) as the **source** chain.
+
+### BRIDGE_RECIPIENT (Optional, for layerzero-bridge.ts)
+
+Destination address; default is the wallet address.
 
 ### USER_ADDRESS (Optional, for get-positions.ts only)
 
@@ -204,11 +236,19 @@ You can create your own scripts based on these examples. The basic structure is 
 ```typescript
 import { FxSdk } from '../src/core'
 import { privateKeyToAccount } from 'viem/accounts'
-import { createWalletClient, http } from 'viem'
-import { mainnet } from 'viem/chains'
+import { createWalletClient, http, defineChain } from 'viem'
 import * as dotenv from 'dotenv'
 
 dotenv.config()
+
+function getChain(chainId: number, rpcUrl: string) {
+  return defineChain({
+    id: chainId,
+    name: `Chain ${chainId}`,
+    nativeCurrency: { decimals: 18, name: 'Ether', symbol: 'ETH' },
+    rpcUrls: { default: { http: [rpcUrl] } },
+  })
+}
 
 async function yourFunction() {
   // 1. Create account from private key
@@ -219,17 +259,21 @@ async function yourFunction() {
   const account = privateKeyToAccount(privateKey)
   const userAddress = account.address
 
+  const rpcUrl = process.env.RPC_URL || 'https://ethereum-rpc.publicnode.com'
+  const chainId = parseInt(process.env.CHAIN_ID || '1')
+  const chain = getChain(chainId, rpcUrl)
+
   // 2. Initialize SDK
   const sdk = new FxSdk({
-    rpcUrl: process.env.RPC_URL,
-    chainId: parseInt(process.env.CHAIN_ID || '1'),
+    rpcUrl,
+    chainId,
   })
 
   // 3. Create wallet client
   const walletClient = createWalletClient({
     account,
-    chain: mainnet,
-    transport: http(process.env.RPC_URL),
+    chain,
+    transport: http(rpcUrl),
   })
 
   // 4. Call SDK method to get transactions

@@ -2,7 +2,17 @@ import { getClient } from '@/core/client'
 import { isAddress } from 'viem'
 import { Position } from '@/core/position'
 import { Pool } from '@/core/pool'
-import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest, Market, PositionType } from '@/types'
+import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest, Market, PositionType, BridgeQuoteRequest, BridgeQuoteResult, BuildBridgeTxRequest, BuildBridgeTxResult, GetFxSaveBalanceRequest, GetFxSaveBalanceResult, GetFxSaveConfigRequest, GetFxSaveConfigResult, GetFxSaveRedeemStatusRequest, GetFxSaveRedeemStatusResult, GetFxSaveClaimableRequest, GetFxSaveClaimableResult, GetRedeemTxRequest, GetRedeemTxResult, FxSaveDepositRequest, FxSaveDepositResult, FxSaveWithdrawRequest, FxSaveWithdrawResult } from '@/types'
+import { getBridgeQuote as getBridgeQuoteImpl, buildBridgeTx as buildBridgeTxImpl } from '@/bridge'
+import {
+  getFxSaveBalance as getFxSaveBalanceImpl,
+  getFxSaveConfig as getFxSaveConfigImpl,
+  getFxSaveRedeemStatus as getFxSaveRedeemStatusImpl,
+  getFxSaveClaimable as getFxSaveClaimableImpl,
+  getRedeemTx as getRedeemTxImpl,
+  depositFxSave as depositFxSaveImpl,
+  withdrawFxSave as withdrawFxSaveImpl,
+} from '@/core/fxsave'
 import { getOwnerOf } from '@/utils/service'
 import { getPoolName } from '@/utils'
 import { getPositionsByUser } from '@/utils/service'
@@ -26,7 +36,7 @@ export class FxSdk {
    * @param request.userAddress - The user's wallet address
    * @param request.market - Market: 'ETH' or 'BTC'
    * @param request.type - Position type: 'long' or 'short'
-   * @returns Array of position info objects (positionId, rawColls, rawDebts, currentLeverage, lsdLeverage)
+   * @returns Array of position info objects (PositionInfo: positionId, rawColls, rawDebts, currentLeverage, lsdLeverage, rawCollsToken, rawDebtsToken, rawCollsDecimals, rawDebtsDecimals)
    */
   async getPositions(request: {
     /** The user's wallet address */
@@ -439,5 +449,84 @@ export class FxSdk {
       ...request,
       withdrawTokenAddress: withdrawTokenAddress.toLowerCase(),
     })
+  }
+
+  /**
+   * Gets a fee quote for bridging tokens between Base and Ethereum via LayerZero V2 OFT.
+   * @param request - sourceChainId (1 | 8453), destChainId (1 | 8453), token (key or OFT address), amount, recipient
+   * @returns { nativeFee, lzTokenFee } in wei
+   */
+  async getBridgeQuote(request: BridgeQuoteRequest): Promise<BridgeQuoteResult> {
+    return getBridgeQuoteImpl(request)
+  }
+
+  /**
+   * Builds the transaction payload to bridge tokens between Base and Ethereum via LayerZero V2 OFT.
+   * @param request - Same as getBridgeQuote, with optional refundAddress
+   * @returns { tx: { to, data, value }, quote } for sending on source chain
+   */
+  async buildBridgeTx(request: BuildBridgeTxRequest): Promise<BuildBridgeTxResult> {
+    return buildBridgeTxImpl(request)
+  }
+
+  /**
+   * Gets user's fxSAVE balance (shares and optional assets in wei).
+   */
+  async getFxSaveBalance(
+    request: GetFxSaveBalanceRequest
+  ): Promise<GetFxSaveBalanceResult> {
+    return getFxSaveBalanceImpl(request)
+  }
+
+  /**
+   * Gets fxSAVE protocol totals and config (total supply, total assets, cooldown period, fee ratios).
+   */
+  async getFxSaveConfig(
+    request?: GetFxSaveConfigRequest
+  ): Promise<GetFxSaveConfigResult> {
+    return getFxSaveConfigImpl(request)
+  }
+
+  /**
+   * Gets Cooldown status: pending redeem amount and whether cooldown is complete.
+   */
+  async getFxSaveRedeemStatus(
+    request: GetFxSaveRedeemStatusRequest
+  ): Promise<GetFxSaveRedeemStatusResult> {
+    return getFxSaveRedeemStatusImpl(request)
+  }
+
+  /**
+   * Gets claimable status and preview receive (fxUSD + USDC). Align with app fxSAVEPage + ClaimModal.
+   */
+  async getFxSaveClaimable(
+    request: GetFxSaveClaimableRequest
+  ): Promise<GetFxSaveClaimableResult> {
+    return getFxSaveClaimableImpl(request)
+  }
+
+  /**
+   * Builds the claim tx after cooldown. Call when getFxSaveRedeemStatus/getFxSaveClaimable returns isCooldownComplete true.
+   */
+  async getRedeemTx(request: GetRedeemTxRequest): Promise<GetRedeemTxResult> {
+    return getRedeemTxImpl(request)
+  }
+
+  /**
+   * Builds deposit tx(s) for fxSAVE. Supports USDC, fxUSD, fxUSD Base Pool.
+   */
+  async depositFxSave(
+    request: FxSaveDepositRequest
+  ): Promise<FxSaveDepositResult> {
+    return depositFxSaveImpl(request)
+  }
+
+  /**
+   * Builds withdraw tx(s): requestRedeem (default) or instant redeem (fee + slippage).
+   */
+  async withdrawFxSave(
+    request: FxSaveWithdrawRequest
+  ): Promise<FxSaveWithdrawResult> {
+    return withdrawFxSaveImpl(request)
   }
 }
