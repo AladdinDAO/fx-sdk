@@ -351,6 +351,9 @@ sdk.getGaugeList()
    - fxSAVE claim: `npm run example:fxsave-claim`
    - Lock info: `npm run example:lock-info`
    - Lock create: `npm run example:lock-create`
+   - Lock increase: `npm run example:lock-increase`
+   - Lock withdraw: `npm run example:lock-withdraw`
+   - Lock claim rewards: `npm run example:lock-claim-rewards`
    - Earn gauge list: `npm run example:earn-gauge-list`
    - Earn deposit: `npm run example:earn-deposit`
    - Earn withdraw: `npm run example:earn-withdraw`
