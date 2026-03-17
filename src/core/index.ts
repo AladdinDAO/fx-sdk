@@ -2,7 +2,7 @@ import { getClient } from '@/core/client'
 import { isAddress } from 'viem'
 import { Position } from '@/core/position'
 import { Pool } from '@/core/pool'
-import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest, Market, PositionType, BridgeQuoteRequest, BridgeQuoteResult, BuildBridgeTxRequest, BuildBridgeTxResult, GetFxSaveBalanceRequest, GetFxSaveBalanceResult, GetFxSaveConfigRequest, GetFxSaveConfigResult, GetFxSaveRedeemStatusRequest, GetFxSaveRedeemStatusResult, GetFxSaveClaimableRequest, GetFxSaveClaimableResult, GetRedeemTxRequest, GetRedeemTxResult, FxSaveDepositRequest, FxSaveDepositResult, FxSaveWithdrawRequest, FxSaveWithdrawResult, GetLockInfoRequest, GetLockInfoResult, CreateLockRequest, CreateLockResult, IncreaseLockAmountRequest, IncreaseLockAmountResult, ExtendLockTimeRequest, ExtendLockTimeResult, WithdrawLockRequest, WithdrawLockResult, ClaimLockRewardsRequest, ClaimLockRewardsResult, DelegateBoostRequest, DelegateBoostResult, UndelegateBoostRequest, UndelegateBoostResult } from '@/types'
+import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest, Market, PositionType, BridgeQuoteRequest, BridgeQuoteResult, BuildBridgeTxRequest, BuildBridgeTxResult, GetFxSaveBalanceRequest, GetFxSaveBalanceResult, GetFxSaveConfigRequest, GetFxSaveConfigResult, GetFxSaveRedeemStatusRequest, GetFxSaveRedeemStatusResult, GetFxSaveClaimableRequest, GetFxSaveClaimableResult, GetRedeemTxRequest, GetRedeemTxResult, FxSaveDepositRequest, FxSaveDepositResult, FxSaveWithdrawRequest, FxSaveWithdrawResult, GetLockInfoRequest, GetLockInfoResult, CreateLockRequest, CreateLockResult, IncreaseLockAmountRequest, IncreaseLockAmountResult, ExtendLockTimeRequest, ExtendLockTimeResult, WithdrawLockRequest, WithdrawLockResult, ClaimLockRewardsRequest, ClaimLockRewardsResult, DelegateBoostRequest, DelegateBoostResult, UndelegateBoostRequest, UndelegateBoostResult, GetGaugeListResult, GetEarnPositionRequest, GetEarnPositionResult, EarnDepositRequest, EarnDepositResult, EarnWithdrawRequest, EarnWithdrawResult, ClaimFxnRequest, ClaimFxnResult, ClaimRewardsRequest, ClaimRewardsResult } from '@/types'
 import { getBridgeQuote as getBridgeQuoteImpl, buildBridgeTx as buildBridgeTxImpl } from '@/bridge'
 import {
   getLockInfo as getLockInfoImpl,
@@ -14,6 +14,14 @@ import {
   delegateBoost as delegateBoostImpl,
   undelegateBoost as undelegateBoostImpl,
 } from '@/core/lock'
+import {
+  getGaugeList as getGaugeListImpl,
+  getEarnPosition as getEarnPositionImpl,
+  earnDeposit as earnDepositImpl,
+  earnWithdraw as earnWithdrawImpl,
+  claimFxn as claimFxnImpl,
+  claimRewards as claimRewardsImpl,
+} from '@/core/earn'
 import {
   getFxSaveBalance as getFxSaveBalanceImpl,
   getFxSaveConfig as getFxSaveConfigImpl,
@@ -570,5 +578,29 @@ export class FxSdk {
 
   async undelegateBoost(request: UndelegateBoostRequest): Promise<UndelegateBoostResult> {
     return undelegateBoostImpl(request)
+  }
+
+  async getGaugeList(): Promise<GetGaugeListResult> {
+    return getGaugeListImpl()
+  }
+
+  async getEarnPosition(request: GetEarnPositionRequest): Promise<GetEarnPositionResult> {
+    return getEarnPositionImpl(request)
+  }
+
+  async earnDeposit(request: EarnDepositRequest): Promise<EarnDepositResult> {
+    return earnDepositImpl(request)
+  }
+
+  async earnWithdraw(request: EarnWithdrawRequest): Promise<EarnWithdrawResult> {
+    return earnWithdrawImpl(request)
+  }
+
+  async claimFxn(request: ClaimFxnRequest): Promise<ClaimFxnResult> {
+    return claimFxnImpl(request)
+  }
+
+  async claimRewards(request: ClaimRewardsRequest): Promise<ClaimRewardsResult> {
+    return claimRewardsImpl(request)
   }
 }

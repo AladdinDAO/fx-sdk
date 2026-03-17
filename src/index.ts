@@ -52,6 +52,18 @@ export type {
   DelegateBoostResult,
   UndelegateBoostRequest,
   UndelegateBoostResult,
+  GaugeInfo,
+  GetGaugeListResult,
+  GetEarnPositionRequest,
+  GetEarnPositionResult,
+  EarnDepositRequest,
+  EarnDepositResult,
+  EarnWithdrawRequest,
+  EarnWithdrawResult,
+  ClaimFxnRequest,
+  ClaimFxnResult,
+  ClaimRewardsRequest,
+  ClaimRewardsResult,
 } from "./types";
 export type { PoolName, PoolConfig, PoolInfo } from "./types/pool";
 export {
