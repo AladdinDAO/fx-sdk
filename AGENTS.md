@@ -9,7 +9,7 @@
 
 ## Purpose
 
-SDK for **leveraged positions** (long/short) on **ETH** and **BTC**. Amounts are **wei** (bigint); e.g. 1 ETH = `1000000000000000000n`.
+SDK for **leveraged positions** (long/short) on **ETH** and **BTC**, **Lock** (veFXN voting escrow), and **Earn** (gauge LP mining). Amounts are **wei** (bigint); e.g. 1 ETH = `1000000000000000000n`.
 
 ## Entry point
 
@@ -39,6 +39,20 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 | **getRedeemTx** | Build claim tx after cooldown (`claim(receiver)`). Call when isCooldownComplete; returns `{ txs }`. |
 | **depositFxSave** | Deposit into fxSAVE: tokenIn `usdc`\|`fxUSD`\|`fxUSDBasePool`, amount wei, optional slippage. Returns `{ txs }`. |
 | **withdrawFxSave** | Withdraw: tokenOut `fxUSDBasePool` → redeem; `usdc`/`fxUSD` → requestRedeem or instant (instant needs slippage). Returns `{ txs }`. |
+| **getLockInfo** | Read veFXN lock status: lockedAmount, lockEnd, vePower, pendingWstETH rewards, delegation info. |
+| **createLock** | Lock FXN → veFXN. Requires amount + unlockTime. Returns approve + create_lock txs. |
+| **increaseLockAmount** | Add more FXN to existing lock. Returns approve + increase_amount txs. |
+| **extendLockTime** | Extend lock end time. Returns extend tx. |
+| **withdrawLock** | Withdraw FXN after lock expires (lockStatus must be `expired`). |
+| **claimLockRewards** | Claim pending wstETH from FeeDistributor. |
+| **delegateBoost** | Delegate veFXN boost to another address (VotingEscrowBoost). |
+| **undelegateBoost** | Undelegate veFXN boost by token index. |
+| **getGaugeList** | List all Liquidity Gauges (name, gauge address, LP token) from Aladdin API. Read-only, no params. |
+| **getEarnPosition** | Read user's gauge position: stakedBalance, pendingFxn, pendingRewards. |
+| **earnDeposit** | Deposit LP tokens into gauge. Returns approve + deposit txs. |
+| **earnWithdraw** | Withdraw LP tokens from gauge. |
+| **claimFxn** | Claim FXN rewards via TokenMinter.mint(gauge). |
+| **claimRewards** | Claim extra rewards from gauge (non-FXN tokens). |
 
 ## Markets
 
@@ -57,6 +71,11 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 - **slippage**: Number in (0, 100), e.g. `1` = 1%.
 - **amounts**: **bigint** in wei only (no floats/strings).
 - **Token addresses**: Prefer `tokens.*`. ETH: eth, stETH, weth, wstETH, usdc, usdt, fxUSD. BTC: WBTC, usdc, usdt, fxUSD.
+- **unlockTime** (Lock): Unix timestamp in seconds. Auto-aligned to WEEK (604800s) boundary. Max 4 years from now.
+- **gaugeAddress** (Earn): Valid 0x address. Get from `getGaugeList()`.
+- **lpTokenAddress** (Earn deposit): LP token address paired with the gauge.
+- **boostIndex** (undelegateBoost): Token index of the boost delegation to cancel.
+- **initialAmount** (undelegateBoost): Original delegated amount (uint128).
 
 ## Return shapes
 
@@ -70,6 +89,11 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 - **getFxSaveRedeemStatus**: `{ hasPendingRedeem, pendingSharesWei, cooldownPeriodSeconds, redeemableAt, isCooldownComplete }`.
 - **getFxSaveClaimable**: extends redeem status with optional `previewReceive?: { amountYieldOutWei, amountStableOutWei }` (fxUSD + USDC from FxUSDBasePool.previewRedeem).
 - **getRedeemTx / depositFxSave / withdrawFxSave**: `{ txs }`; execute in order (same shape as depositAndMint txs).
+- **getLockInfo**: `{ lockedAmount, lockEnd, vePower, lockStatus, veTotalSupply, pendingWstETH, delegatedBalance, delegableBalance, adjustedVeBalance, weeklyFeeAmount }` (all bigint, lockStatus is string).
+- **createLock / increaseLockAmount / extendLockTime / withdrawLock / claimLockRewards / delegateBoost / undelegateBoost**: `{ txs }`; execute in order (approve first if present).
+- **getGaugeList**: `{ gauges: [{ name, gauge, lpAddress }] }`.
+- **getEarnPosition**: `{ stakedBalance, pendingFxn, pendingRewards }` (pendingRewards is `Record<string, bigint>`).
+- **earnDeposit / earnWithdraw / claimFxn / claimRewards**: `{ txs }`; execute in order (approve first if present).
 
 ## Errors
 
@@ -80,6 +104,8 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 - "Input/Output/Deposit/Withdraw token address must be ..." → use allowed token for market (see Parameter rules).
 - Bridge: "Unsupported bridge chainId" → use `sourceChainId`/`destChainId` in `[1, 8453]` and they must differ. "Unsupported bridge token" → use `fxUSD` or `fxSAVE`, or a valid OFT address.
 - fxSAVE: tokenIn/tokenOut use keys `usdc`, `fxUSD`, `fxUSDBasePool`. Instant withdraw only for usdc/fxUSD; slippage required when instant. Convert amount strings to bigint before calling.
+- Lock: "User has no active lock" → user must createLock first. "Lock has not expired" → cannot withdrawLock until lockEnd passed. "Unlock time must be in the future" / "Unlock time exceeds max lock time (4 years)" → unlockTime bounds.
+- Earn: "Invalid gauge address" → use address from `getGaugeList`. "Amount must be greater than 0" → positive bigint amount.
 
 ## Bridge (Base <-> Ethereum)
 
@@ -97,6 +123,28 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 - **Claim**: When isCooldownComplete, call `getRedeemTx({ userAddress, receiver? })` to get claim tx(s); send in order.
 - **Deposit**: `depositFxSave({ userAddress, tokenIn, amount, slippage? })`; tokenIn one of usdc, fxUSD, fxUSDBasePool. Sends approve + deposit txs.
 - **Withdraw**: `withdrawFxSave({ userAddress, tokenOut, amount, instant?, slippage? })`; tokenOut fxUSDBasePool → redeem; usdc/fxUSD and !instant → requestRedeem; usdc/fxUSD and instant → approve + instantRedeemFromFxSave.
+
+## Lock (veFXN — Ethereum)
+
+- **Contracts**: veFXN `0xEC6B8A3F3605B083F7044C0F31f2cac0caf1d469`, FeeDistributor `0xd116513EEa4Efe3908212AfBAeFC76cb29245681`, VotingEscrowBoost `0x8Cc02c0D9592976635E98e6446ef4976567E7A81`, FXN Token `0x365AccFCa291e7D3914637ABf1F7635dB165Bb09`.
+- **Status**: `getLockInfo({ userAddress })` → lockedAmount, lockEnd, vePower, lockStatus (`no-lock`|`active`|`expired`), veTotalSupply, pendingWstETH, delegatedBalance, delegableBalance, adjustedVeBalance, weeklyFeeAmount.
+- **Create lock**: `createLock({ userAddress, amount, unlockTime })` → `{ txs }` (approve FXN + create_lock). unlockTime auto-aligned to WEEK (604800s). Max 4 years.
+- **Add FXN**: `increaseLockAmount({ userAddress, amount })` → `{ txs }` (approve + increase_amount). Requires active lock.
+- **Extend**: `extendLockTime({ userAddress, unlockTime })` → `{ txs }`. Must be > current lockEnd.
+- **Withdraw**: `withdrawLock({ userAddress })` → `{ txs }`. Only when lockStatus is `expired`.
+- **Claim fees**: `claimLockRewards({ userAddress })` → `{ txs }` (FeeDistributor.claim → wstETH).
+- **Delegate boost**: `delegateBoost({ userAddress, receiver, amount, endTime })` → `{ txs }` (VotingEscrowBoost.boost).
+- **Undelegate**: `undelegateBoost({ userAddress, boostIndex, initialAmount })` → `{ txs }` (VotingEscrowBoost.unboost). initialAmount is uint128.
+
+## Earn (Gauge LP Mining — Ethereum)
+
+- **Contracts**: FXN_TokenMinter `0xC8b194925D55d5dE9555AD1db74c149329F71DeF`. Gauge addresses are dynamic (from API).
+- **List gauges**: `getGaugeList()` → `{ gauges: [{ name, gauge, lpAddress }] }`. Fetches from Aladdin API. No params.
+- **Position**: `getEarnPosition({ userAddress, gaugeAddress })` → `{ stakedBalance, pendingFxn, pendingRewards }`. pendingFxn = integrate_fraction − minted.
+- **Deposit**: `earnDeposit({ userAddress, gaugeAddress, lpTokenAddress, amount })` → `{ txs }` (approve LP + gauge.deposit).
+- **Withdraw**: `earnWithdraw({ userAddress, gaugeAddress, amount })` → `{ txs }` (gauge.withdraw).
+- **Claim FXN**: `claimFxn({ userAddress, gaugeAddress })` → `{ txs }` (TokenMinter.mint(gauge)).
+- **Claim rewards**: `claimRewards({ userAddress, gaugeAddress, receiver? })` → `{ txs }` (gauge.claim — non-FXN reward tokens).
 
 ## Tool schema
 
