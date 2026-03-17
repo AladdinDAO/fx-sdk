@@ -11,6 +11,18 @@ import type {
   GetLockInfoResult,
   CreateLockRequest,
   CreateLockResult,
+  IncreaseLockAmountRequest,
+  IncreaseLockAmountResult,
+  ExtendLockTimeRequest,
+  ExtendLockTimeResult,
+  WithdrawLockRequest,
+  WithdrawLockResult,
+  ClaimLockRewardsRequest,
+  ClaimLockRewardsResult,
+  DelegateBoostRequest,
+  DelegateBoostResult,
+  UndelegateBoostRequest,
+  UndelegateBoostResult,
   FxSaveTx,
 } from '@/types'
 
@@ -176,6 +188,203 @@ export async function createLock(
     nonce: nonce++,
     chainId,
   })
+
+  return { txs }
+}
+
+export async function increaseLockAmount(
+  request: IncreaseLockAmountRequest
+): Promise<IncreaseLockAmountResult> {
+  const { userAddress, amount } = request
+  if (!isAddress(userAddress)) {
+    throw new Error('User address must be a valid Ethereum address')
+  }
+  if (amount <= 0n) {
+    throw new Error('Amount must be greater than 0')
+  }
+
+  const client = getClient()
+  const txs: FxSaveTx[] = []
+  let nonce = await getNonce(userAddress)
+  const chainId = client.chain?.id
+
+  const approveTx = await approveToken({
+    tokenAddress: fxnToken,
+    amount,
+    spender: veFXN,
+    userAddress,
+  })
+  if (approveTx) {
+    txs.push({ ...approveTx, nonce: nonce++, chainId })
+  }
+
+  txs.push({
+    type: 'lock',
+    from: userAddress,
+    to: contracts.veFXN,
+    data: encodeFunctionData({
+      abi: VotingEscrowAbi,
+      functionName: 'increase_amount',
+      args: [amount],
+    }),
+    value: 0n,
+    nonce: nonce++,
+    chainId,
+  })
+
+  return { txs }
+}
+
+export async function extendLockTime(
+  request: ExtendLockTimeRequest
+): Promise<ExtendLockTimeResult> {
+  const { userAddress, unlockTime } = request
+  if (!isAddress(userAddress)) {
+    throw new Error('User address must be a valid Ethereum address')
+  }
+  const now = Math.floor(Date.now() / 1000)
+  if (unlockTime <= now) {
+    throw new Error('Unlock time must be in the future')
+  }
+
+  const alignedTime = alignToWeek(unlockTime)
+  const client = getClient()
+  let nonce = await getNonce(userAddress)
+  const chainId = client.chain?.id
+
+  const txs: FxSaveTx[] = [{
+    type: 'lock',
+    from: userAddress,
+    to: contracts.veFXN,
+    data: encodeFunctionData({
+      abi: VotingEscrowAbi,
+      functionName: 'increase_unlock_time',
+      args: [BigInt(alignedTime)],
+    }),
+    value: 0n,
+    nonce: nonce++,
+    chainId,
+  }]
+
+  return { txs }
+}
+
+export async function withdrawLock(
+  request: WithdrawLockRequest
+): Promise<WithdrawLockResult> {
+  const { userAddress } = request
+  if (!isAddress(userAddress)) {
+    throw new Error('User address must be a valid Ethereum address')
+  }
+
+  const client = getClient()
+  let nonce = await getNonce(userAddress)
+  const chainId = client.chain?.id
+
+  const txs: FxSaveTx[] = [{
+    type: 'withdraw',
+    from: userAddress,
+    to: contracts.veFXN,
+    data: encodeFunctionData({
+      abi: VotingEscrowAbi,
+      functionName: 'withdraw',
+      args: [],
+    }),
+    value: 0n,
+    nonce: nonce++,
+    chainId,
+  }]
+
+  return { txs }
+}
+
+export async function claimLockRewards(
+  request: ClaimLockRewardsRequest
+): Promise<ClaimLockRewardsResult> {
+  const { userAddress } = request
+  if (!isAddress(userAddress)) {
+    throw new Error('User address must be a valid Ethereum address')
+  }
+
+  const client = getClient()
+  let nonce = await getNonce(userAddress)
+  const chainId = client.chain?.id
+
+  const txs: FxSaveTx[] = [{
+    type: 'claim',
+    from: userAddress,
+    to: contracts.FeeDistributor,
+    data: encodeFunctionData({
+      abi: FeeDistributorAbi,
+      functionName: 'claim',
+      args: [userAddress as `0x${string}`],
+    }),
+    value: 0n,
+    nonce: nonce++,
+    chainId,
+  }]
+
+  return { txs }
+}
+
+export async function delegateBoost(
+  request: DelegateBoostRequest
+): Promise<DelegateBoostResult> {
+  const { userAddress, receiver, amount, endTime } = request
+  if (!isAddress(userAddress)) {
+    throw new Error('User address must be a valid Ethereum address')
+  }
+  if (!isAddress(receiver)) {
+    throw new Error('Receiver must be a valid Ethereum address')
+  }
+
+  const alignedEndTime = alignToWeek(endTime)
+  const client = getClient()
+  let nonce = await getNonce(userAddress)
+  const chainId = client.chain?.id
+
+  const txs: FxSaveTx[] = [{
+    type: 'boost',
+    from: userAddress,
+    to: contracts.VotingEscrowBoost,
+    data: encodeFunctionData({
+      abi: VotingEscrowBoostAbi,
+      functionName: 'boost',
+      args: [receiver as `0x${string}`, amount, BigInt(alignedEndTime)],
+    }),
+    value: 0n,
+    nonce: nonce++,
+    chainId,
+  }]
+
+  return { txs }
+}
+
+export async function undelegateBoost(
+  request: UndelegateBoostRequest
+): Promise<UndelegateBoostResult> {
+  const { userAddress, boostIndex, initialAmount } = request
+  if (!isAddress(userAddress)) {
+    throw new Error('User address must be a valid Ethereum address')
+  }
+
+  const client = getClient()
+  let nonce = await getNonce(userAddress)
+  const chainId = client.chain?.id
+
+  const txs: FxSaveTx[] = [{
+    type: 'unboost',
+    from: userAddress,
+    to: contracts.VotingEscrowBoost,
+    data: encodeFunctionData({
+      abi: VotingEscrowBoostAbi,
+      functionName: 'unboost',
+      args: [BigInt(boostIndex), initialAmount],
+    }),
+    value: 0n,
+    nonce: nonce++,
+    chainId,
+  }]
 
   return { txs }
 }
