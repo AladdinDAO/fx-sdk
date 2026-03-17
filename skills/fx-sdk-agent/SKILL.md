@@ -1,7 +1,7 @@
 ---
 name: fx-sdk-agent
-version: 1.0.1
-description: Use FX Protocol TypeScript SDK (fx-sdk) to query positions (getPositions returns PositionInfo[] with rawColls, rawDebts, rawCollsToken, rawDebtsToken, decimals), build leverage operation transaction plans, bridge tokens between Base and Ethereum (LayerZero), and fxSAVE (config/totals, balance, redeem status, claimable preview, deposit, withdraw, claim). Generate runnable scripts for increasePosition, reducePosition, adjustPositionLeverage, depositAndMint, repayAndWithdraw, getBridgeQuote, buildBridgeTx, getFxSaveConfig, getFxSaveBalance, getFxSaveRedeemStatus, getFxSaveClaimable, getRedeemTx, depositFxSave, withdrawFxSave. Use when users ask to integrate this SDK into an agent/tool, produce transaction execution code, troubleshoot SDK parameters, or validate FX trading workflows on Ethereum mainnet or Base.
+version: 1.1.0
+description: Use FX Protocol TypeScript SDK (fx-sdk) to query positions, build leverage operations, bridge tokens (LayerZero), fxSAVE vault, Lock (veFXN voting escrow), and Earn (gauge LP mining). Methods include getPositions, increasePosition, reducePosition, adjustPositionLeverage, depositAndMint, repayAndWithdraw, getBridgeQuote, buildBridgeTx, getFxSaveConfig, getFxSaveBalance, getFxSaveRedeemStatus, getFxSaveClaimable, getRedeemTx, depositFxSave, withdrawFxSave, getLockInfo, createLock, increaseLockAmount, extendLockTime, withdrawLock, claimLockRewards, delegateBoost, undelegateBoost, getGaugeList, getEarnPosition, earnDeposit, earnWithdraw, claimFxn, claimRewards. Use when users ask to integrate this SDK into an agent/tool, produce transaction execution code, troubleshoot SDK parameters, or validate FX workflows on Ethereum mainnet or Base.
 ---
 
 # FX SDK Agent Skill
@@ -10,7 +10,7 @@ Use this skill to produce reliable `fx-sdk` integrations for agent workflows.
 
 ## Follow This Workflow
 
-1. Confirm user intent: read-only query (`getPositions`, `getFxSaveConfig`, `getFxSaveBalance`, `getFxSaveRedeemStatus`, `getFxSaveClaimable`), transaction-producing action (`increase/reduce/adjust/deposit/repay`, fxSAVE `depositFxSave`/`withdrawFxSave`/`getRedeemTx`), or Base–Ethereum bridge (`getBridgeQuote` / `buildBridgeTx`).
+1. Confirm user intent: read-only query (`getPositions`, `getFxSaveConfig`, `getFxSaveBalance`, `getFxSaveRedeemStatus`, `getFxSaveClaimable`, `getLockInfo`, `getGaugeList`, `getEarnPosition`), transaction-producing action (`increase/reduce/adjust/deposit/repay`, fxSAVE `depositFxSave`/`withdrawFxSave`/`getRedeemTx`, Lock `createLock`/`increaseLockAmount`/`extendLockTime`/`withdrawLock`/`claimLockRewards`/`delegateBoost`/`undelegateBoost`, Earn `earnDeposit`/`earnWithdraw`/`claimFxn`/`claimRewards`), or Base–Ethereum bridge (`getBridgeQuote` / `buildBridgeTx`).
 2. Collect required inputs before coding:
 - `market`: `ETH` or `BTC`
 - position type when needed: `long` or `short`
@@ -21,6 +21,8 @@ Use this skill to produce reliable `fx-sdk` integrations for agent workflows.
 - `userAddress`
 - For bridge: `sourceChainId` (1 | 8453), `destChainId` (1 | 8453), `token` (key or OFT address), `amount`, `recipient`
 - For fxSAVE: `userAddress`; for deposit `tokenIn` (`usdc`|`fxUSD`|`fxUSDBasePool`), `amount` (bigint), optional `slippage`; for withdraw `tokenOut`, `amount` (shares wei), `instant` (boolean), optional `slippage` when instant; for claim use `getRedeemTx` when cooldown complete
+- For Lock: `userAddress`; for createLock `amount` (FXN wei), `unlockTime` (unix timestamp, auto-aligned to WEEK); for delegateBoost `receiver`, `amount`, `endTime`; for undelegateBoost `boostIndex`, `initialAmount`
+- For Earn: `userAddress`, `gaugeAddress` (from `getGaugeList`); for earnDeposit also `lpTokenAddress`, `amount`; for claimRewards optional `receiver`
 3. Create `FxSdk` once and reuse it.
 4. Return SDK result first (routes/tx plan), then optionally provide transaction sending loop.
 5. Keep nonce order from SDK-provided `txs`; send transactions sequentially. **Wait for each tx receipt before sending the next.**
@@ -61,6 +63,26 @@ const sdk = new FxSdk({ rpcUrl, chainId: 1 })
 - `sdk.getBridgeQuote(...)`: fee quote for LayerZero V2 OFT bridge (Base <-> Ethereum). Use source chain RPC.
 - `sdk.buildBridgeTx(...)`: build tx payload (to, data, value) to send on source chain; then send with wallet (same pattern as position txs). **When Ethereum is source chain, user must approve `tx.to` (RootEndPointV2) to spend the token before sending the bridge tx.**
 
+**Lock (veFXN)**
+
+- `sdk.getLockInfo({ userAddress })`: read lock status — lockedAmount, lockEnd, vePower, lockStatus (`no-lock`|`active`|`expired`), veTotalSupply, pendingWstETH, delegatedBalance, delegableBalance, adjustedVeBalance, weeklyFeeAmount.
+- `sdk.createLock({ userAddress, amount, unlockTime })`: lock FXN → veFXN; returns `{ txs }` (approve + create_lock). unlockTime auto-aligned to WEEK boundary, max 4 years.
+- `sdk.increaseLockAmount({ userAddress, amount })`: add FXN to existing lock; returns `{ txs }` (approve + increase_amount).
+- `sdk.extendLockTime({ userAddress, unlockTime })`: extend lock end; returns `{ txs }`.
+- `sdk.withdrawLock({ userAddress })`: withdraw FXN when lockStatus is `expired`; returns `{ txs }`.
+- `sdk.claimLockRewards({ userAddress })`: claim wstETH from FeeDistributor; returns `{ txs }`.
+- `sdk.delegateBoost({ userAddress, receiver, amount, endTime })`: delegate veFXN boost; returns `{ txs }`.
+- `sdk.undelegateBoost({ userAddress, boostIndex, initialAmount })`: undelegate boost by token index; returns `{ txs }`.
+
+**Earn (Gauge LP Mining)**
+
+- `sdk.getGaugeList()`: list gauges → `{ gauges: [{ name, gauge, lpAddress }] }`. Fetches from Aladdin API.
+- `sdk.getEarnPosition({ userAddress, gaugeAddress })`: read gauge position → `{ stakedBalance, pendingFxn, pendingRewards }`.
+- `sdk.earnDeposit({ userAddress, gaugeAddress, lpTokenAddress, amount })`: deposit LP; returns `{ txs }` (approve + deposit).
+- `sdk.earnWithdraw({ userAddress, gaugeAddress, amount })`: withdraw LP; returns `{ txs }`.
+- `sdk.claimFxn({ userAddress, gaugeAddress })`: claim FXN via TokenMinter.mint(gauge); returns `{ txs }`.
+- `sdk.claimRewards({ userAddress, gaugeAddress, receiver? })`: claim non-FXN rewards; returns `{ txs }`.
+
 **fxSAVE**
 
 - `sdk.getFxSaveConfig()`: fxSAVE protocol totals and config (totalSupplyWei, totalAssetsWei, cooldownPeriodSeconds, instantRedeemFeeRatio, expenseRatio, harvesterRatio, threshold); no user address required.
@@ -79,6 +101,18 @@ const sdk = new FxSdk({ rpcUrl, chainId: 1 })
 
 Use `tokens.fxUSD` in SDK calls on Ethereum; pass the Base address directly when building bridge txs with `sourceChainId: 8453`.
 
+## Lock & Earn Contract Addresses
+
+| Contract | Address |
+|----------|---------|
+| veFXN | `0xEC6B8A3F3605B083F7044C0F31f2cac0caf1d469` |
+| FeeDistributor | `0xd116513EEa4Efe3908212AfBAeFC76cb29245681` |
+| VotingEscrowBoost | `0x8Cc02c0D9592976635E98e6446ef4976567E7A81` |
+| FXN Token | `0x365AccFCa291e7D3914637ABf1F7635dB165Bb09` |
+| FXN_TokenMinter | `0xC8b194925D55d5dE9555AD1db74c149329F71DeF` |
+
+Gauge addresses are dynamic — always call `getGaugeList()` to discover them.
+
 ## Token Constraints
 
 Honor SDK token checks:
@@ -91,10 +125,20 @@ Honor SDK token checks:
   - ETH long: `eth` | `stETH` | `weth` | `wstETH`  
   - BTC long: `WBTC`
 
-- **fxSAVE**  
-  - `tokenIn` / `tokenOut`: `usdc` | `fxUSD` | `fxUSDBasePool`  
-  - `fxUSDBasePool` → direct redeem; `usdc`/`fxUSD` → requestRedeem (cooldown) or instant (fee + slippage)  
+- **fxSAVE**
+  - `tokenIn` / `tokenOut`: `usdc` | `fxUSD` | `fxUSDBasePool`
+  - `fxUSDBasePool` → direct redeem; `usdc`/`fxUSD` → requestRedeem (cooldown) or instant (fee + slippage)
   - Amounts in wei (18 decimals for fxSAVE shares; 6 for USDC)
+
+- **Lock (veFXN)**
+  - FXN amounts in wei (18 decimals)
+  - unlockTime: unix timestamp in seconds, auto-aligned to WEEK (604800s), max 4 years from now
+  - delegateBoost endTime must be ≤ lock expiry
+
+- **Earn (Gauge)**
+  - LP token amounts in wei (18 decimals)
+  - gaugeAddress: must come from `getGaugeList()`
+  - lpTokenAddress: paired LP token for the gauge (from GaugeInfo.lpAddress)
 
 ## Common Errors
 
@@ -105,6 +149,8 @@ Honor SDK token checks:
 - `"Input/Output/Deposit/Withdraw token address must be ..."` → use allowed token for the market (see Token Constraints).
 - Bridge: `"Unsupported bridge chainId"` → each of `sourceChainId`/`destChainId` must be `1` or `8453` and they must differ. `"Unsupported bridge token"` → use `fxUSD`, `fxSAVE`, or valid OFT address on source chain.
 - fxSAVE: `tokenIn`/`tokenOut` must be `usdc`, `fxUSD`, or `fxUSDBasePool`. Instant withdraw requires `slippage`.
+- Lock: `"User has no active lock"` → must createLock first. `"Lock has not expired"` → cannot withdrawLock until lockEnd passed. `"Unlock time must be in the future"` / `"Unlock time exceeds max lock time (4 years)"` → check unlockTime bounds.
+- Earn: `"Invalid gauge address"` → use address from `getGaugeList()`. `"Amount must be greater than 0"` → positive bigint.
 
 ## Output Style For Agent Tasks
 
@@ -142,6 +188,13 @@ Read these files when examples are required:
 - `example/fxsave-deposit.ts`
 - `example/fxsave-withdraw.ts`
 - `example/fxsave-claim.ts` (redeem status + claimable preview + claim; uses getFxSaveClaimable, getRedeemTx)
+- `example/lock-info.ts` (query veFXN lock status)
+- `example/lock-create.ts` (build createLock txs, dry run)
+- `example/earn-gauge-list.ts` (list Liquidity Gauges)
+- `example/earn-deposit.ts` (build earnDeposit txs, dry run)
+- `example/earn-withdraw.ts` (build earnWithdraw txs; set GAUGE_ADDRESS in .env)
+- `example/earn-claim-fxn.ts` (build claimFxn txs; shows pendingFxn before claiming)
+- `example/earn-claim-rewards.ts` (build claimRewards txs; shows pendingRewards before claiming)
 
 For reusable request shapes, adapter pattern, and test checklist, read:
 

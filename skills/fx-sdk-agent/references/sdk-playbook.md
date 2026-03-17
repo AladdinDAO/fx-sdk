@@ -200,6 +200,137 @@ sdk.getFxSaveConfig()
 // → { txs }; fxUSDBasePool → redeem; usdc/fxUSD !instant → requestRedeem; usdc/fxUSD instant → approve + instantRedeemFromFxSave
 ```
 
+### Lock — Get Lock Info
+
+```ts
+{ userAddress: string }
+// → { lockedAmount, lockEnd, vePower, lockStatus, veTotalSupply, pendingWstETH, delegatedBalance, delegableBalance, adjustedVeBalance, weeklyFeeAmount }
+```
+
+### Lock — Create Lock
+
+```ts
+{
+  userAddress: string,
+  amount: bigint,       // FXN wei
+  unlockTime: number,   // unix timestamp; auto-aligned to WEEK (604800s), max 4 years
+}
+// → { txs } (approve FXN + create_lock)
+```
+
+### Lock — Increase Lock Amount
+
+```ts
+{
+  userAddress: string,
+  amount: bigint,  // additional FXN wei
+}
+// → { txs } (approve + increase_amount)
+```
+
+### Lock — Extend Lock Time
+
+```ts
+{
+  userAddress: string,
+  unlockTime: number,  // must be > current lockEnd
+}
+// → { txs }
+```
+
+### Lock — Withdraw Lock
+
+```ts
+{ userAddress: string }
+// → { txs }; only when lockStatus is 'expired'
+```
+
+### Lock — Claim Lock Rewards
+
+```ts
+{ userAddress: string }
+// → { txs } (FeeDistributor.claim → wstETH)
+```
+
+### Lock — Delegate Boost
+
+```ts
+{
+  userAddress: string,
+  receiver: string,
+  amount: bigint,    // veFXN amount to delegate
+  endTime: number,   // delegation end timestamp
+}
+// → { txs }
+```
+
+### Lock — Undelegate Boost
+
+```ts
+{
+  userAddress: string,
+  boostIndex: number,      // token index
+  initialAmount: bigint,   // original delegated amount (uint128)
+}
+// → { txs }
+```
+
+### Earn — Get Gauge List
+
+```ts
+// No params required
+sdk.getGaugeList()
+// → { gauges: [{ name, gauge, lpAddress }] }
+```
+
+### Earn — Get Earn Position
+
+```ts
+{ userAddress: string, gaugeAddress: string }
+// → { stakedBalance, pendingFxn, pendingRewards }
+```
+
+### Earn — Deposit
+
+```ts
+{
+  userAddress: string,
+  gaugeAddress: string,
+  lpTokenAddress: string,
+  amount: bigint,  // LP token wei
+}
+// → { txs } (approve LP + gauge.deposit)
+```
+
+### Earn — Withdraw
+
+```ts
+{
+  userAddress: string,
+  gaugeAddress: string,
+  amount: bigint,
+}
+// → { txs }
+```
+
+### Earn — Claim FXN
+
+```ts
+{ userAddress: string, gaugeAddress: string }
+// → { txs } (TokenMinter.mint(gauge))
+```
+
+### Earn — Claim Rewards
+
+```ts
+{
+  userAddress: string,
+  gaugeAddress: string,
+  receiver?: string,  // defaults to userAddress
+}
+// → { txs }
+```
+
 ## Validation Checklist
 
 1. **Types and tests**
@@ -218,6 +349,13 @@ sdk.getFxSaveConfig()
   - fxSAVE deposit: `npm run example:fxsave-deposit`
    - fxSAVE withdraw: `npm run example:fxsave-withdraw`
    - fxSAVE claim: `npm run example:fxsave-claim`
+   - Lock info: `npm run example:lock-info`
+   - Lock create: `npm run example:lock-create`
+   - Earn gauge list: `npm run example:earn-gauge-list`
+   - Earn deposit: `npm run example:earn-deposit`
+   - Earn withdraw: `npm run example:earn-withdraw`
+   - Earn claim FXN: `npm run example:earn-claim-fxn`
+   - Earn claim rewards: `npm run example:earn-claim-rewards`
 
 3. **Tx ordering**
    - Approve tx first (if present)
