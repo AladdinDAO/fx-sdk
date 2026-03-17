@@ -9,6 +9,7 @@ export const tokens = {
   stETH: '0xae7ab96520de3a18e5e111b5eaab095312d7fe84',
   /** fxUSD Base Pool (Stability Pool) share token */
   fxUSDBasePool: '0x65C9A641afCEB9C0E6034e558A319488FA0FA3be',
+  FXN: '0x365AccFCa291e7D3914637ABf1F7635dB165Bb09',
 }
 
 export const zapTokens = {
