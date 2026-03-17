@@ -36,6 +36,22 @@ export type {
   FxSaveWithdrawResult,
   FxSaveTx,
   FxSaveTokenIn,
+  GetLockInfoRequest,
+  GetLockInfoResult,
+  CreateLockRequest,
+  CreateLockResult,
+  IncreaseLockAmountRequest,
+  IncreaseLockAmountResult,
+  ExtendLockTimeRequest,
+  ExtendLockTimeResult,
+  WithdrawLockRequest,
+  WithdrawLockResult,
+  ClaimLockRewardsRequest,
+  ClaimLockRewardsResult,
+  DelegateBoostRequest,
+  DelegateBoostResult,
+  UndelegateBoostRequest,
+  UndelegateBoostResult,
 } from "./types";
 export type { PoolName, PoolConfig, PoolInfo } from "./types/pool";
 export {
