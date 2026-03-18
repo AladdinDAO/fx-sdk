@@ -30,10 +30,8 @@
     },
     "slippagePercent": {
       "type": "number",
-      "minimum": 0,
-      "maximum": 100,
-      "exclusiveMinimum": true,
-      "exclusiveMaximum": true,
+      "exclusiveMinimum": 0,
+      "exclusiveMaximum": 100,
       "description": "Slippage in percent (e.g. 1 = 1%)"
     },
     "sourceChainId": {
@@ -54,6 +52,20 @@
       "type": "string",
       "enum": ["usdc", "fxUSD", "fxUSDBasePool"],
       "description": "fxSAVE deposit/withdraw token key"
+    },
+    "gaugeAddress": {
+      "type": "string",
+      "pattern": "^0x[a-fA-F0-9]{40}$",
+      "description": "Gauge contract address; get from getGaugeList"
+    },
+    "unlockTimestamp": {
+      "type": "integer",
+      "description": "Unix timestamp in seconds; auto-aligned to WEEK (604800s). Max 4 years from now."
+    },
+    "boostIndex": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Token index of the boost delegation to cancel"
     }
   },
   "tools": [
@@ -259,6 +271,176 @@
           "slippage": { "$ref": "#/definitions/slippagePercent", "description": "Required when instant is true" }
         },
         "required": ["userAddress", "tokenOut", "amountWei"]
+      }
+    },
+    {
+      "name": "getLockInfo",
+      "description": "Read veFXN lock status: lockedAmount, lockEnd, vePower, lockStatus, pendingWstETH rewards, delegation info. Read-only.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" }
+        },
+        "required": ["userAddress"]
+      }
+    },
+    {
+      "name": "createLock",
+      "description": "Lock FXN to get veFXN. Returns approve + create_lock txs. unlockTime auto-aligned to WEEK boundary, max 4 years.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "amountWei": { "$ref": "#/definitions/amountWei" },
+          "unlockTime": { "$ref": "#/definitions/unlockTimestamp" }
+        },
+        "required": ["userAddress", "amountWei", "unlockTime"]
+      }
+    },
+    {
+      "name": "increaseLockAmount",
+      "description": "Add more FXN to existing lock. Returns approve + increase_amount txs. Requires active lock.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "amountWei": { "$ref": "#/definitions/amountWei" }
+        },
+        "required": ["userAddress", "amountWei"]
+      }
+    },
+    {
+      "name": "extendLockTime",
+      "description": "Extend lock end time. New unlockTime must be greater than current lockEnd.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "unlockTime": { "$ref": "#/definitions/unlockTimestamp" }
+        },
+        "required": ["userAddress", "unlockTime"]
+      }
+    },
+    {
+      "name": "withdrawLock",
+      "description": "Withdraw FXN after lock expires. Only callable when lockStatus is 'expired'.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" }
+        },
+        "required": ["userAddress"]
+      }
+    },
+    {
+      "name": "claimLockRewards",
+      "description": "Claim pending wstETH rewards from FeeDistributor.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" }
+        },
+        "required": ["userAddress"]
+      }
+    },
+    {
+      "name": "delegateBoost",
+      "description": "Delegate veFXN boost to another address via VotingEscrowBoost.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "receiver": { "$ref": "#/definitions/userAddress", "description": "Address to receive the boost delegation" },
+          "amountWei": { "$ref": "#/definitions/amountWei" },
+          "endTime": { "$ref": "#/definitions/unlockTimestamp", "description": "Delegation end timestamp" }
+        },
+        "required": ["userAddress", "receiver", "amountWei", "endTime"]
+      }
+    },
+    {
+      "name": "undelegateBoost",
+      "description": "Undelegate veFXN boost by token index. initialAmount is the original delegated amount (uint128).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "boostIndex": { "$ref": "#/definitions/boostIndex" },
+          "initialAmountWei": { "$ref": "#/definitions/amountWei", "description": "Original delegated amount (uint128)" }
+        },
+        "required": ["userAddress", "boostIndex", "initialAmountWei"]
+      }
+    },
+    {
+      "name": "getGaugeList",
+      "description": "List all Liquidity Gauges (name, gauge address, LP token) from Aladdin API. No params required. Read-only.",
+      "parameters": {
+        "type": "object",
+        "properties": {},
+        "required": []
+      }
+    },
+    {
+      "name": "getEarnPosition",
+      "description": "Read user's gauge position: stakedBalance, pendingFxn, pendingRewards. Read-only.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "gaugeAddress": { "$ref": "#/definitions/gaugeAddress" }
+        },
+        "required": ["userAddress", "gaugeAddress"]
+      }
+    },
+    {
+      "name": "earnDeposit",
+      "description": "Deposit LP tokens into gauge. Returns approve + deposit txs; execute in order.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "gaugeAddress": { "$ref": "#/definitions/gaugeAddress" },
+          "lpTokenAddress": { "$ref": "#/definitions/tokenAddress", "description": "LP token address paired with the gauge" },
+          "amountWei": { "$ref": "#/definitions/amountWei" }
+        },
+        "required": ["userAddress", "gaugeAddress", "lpTokenAddress", "amountWei"]
+      }
+    },
+    {
+      "name": "earnWithdraw",
+      "description": "Withdraw LP tokens from gauge.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "gaugeAddress": { "$ref": "#/definitions/gaugeAddress" },
+          "amountWei": { "$ref": "#/definitions/amountWei" }
+        },
+        "required": ["userAddress", "gaugeAddress", "amountWei"]
+      }
+    },
+    {
+      "name": "claimFxn",
+      "description": "Claim FXN rewards via TokenMinter.mint(gauge).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "gaugeAddress": { "$ref": "#/definitions/gaugeAddress" }
+        },
+        "required": ["userAddress", "gaugeAddress"]
+      }
+    },
+    {
+      "name": "claimRewards",
+      "description": "Claim extra (non-FXN) rewards from gauge. receiver defaults to userAddress.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "gaugeAddress": { "$ref": "#/definitions/gaugeAddress" },
+          "receiver": { "$ref": "#/definitions/userAddress", "description": "Receiver of rewards; defaults to userAddress" }
+        },
+        "required": ["userAddress", "gaugeAddress"]
       }
     }
   ]

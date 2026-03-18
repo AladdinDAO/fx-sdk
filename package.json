@@ -1,6 +1,6 @@
 {
   "name": "@aladdindao/fx-sdk",
-  "version": "1.0.5",
+  "version": "1.1.0",
   "description": "SDK for F(x) Protocol.",
   "author": "AladdinDAO <dev@aladdin.club>",
   "homepage": "https://fx.aladdin.club/",
@@ -49,7 +49,17 @@
     "example:fxsave-config": "tsx example/get-fxsave-config.ts",
     "example:fxsave-deposit": "tsx example/fxsave-deposit.ts",
     "example:fxsave-withdraw": "tsx example/fxsave-withdraw.ts",
-    "example:fxsave-claim": "tsx example/fxsave-claim.ts"
+    "example:fxsave-claim": "tsx example/fxsave-claim.ts",
+    "example:lock-info": "tsx example/lock-info.ts",
+    "example:lock-create": "tsx example/lock-create.ts",
+    "example:lock-increase": "tsx example/lock-increase.ts",
+    "example:lock-withdraw": "tsx example/lock-withdraw.ts",
+    "example:lock-claim-rewards": "tsx example/lock-claim-rewards.ts",
+    "example:earn-gauge-list": "tsx example/earn-gauge-list.ts",
+    "example:earn-deposit": "tsx example/earn-deposit.ts",
+    "example:earn-withdraw": "tsx example/earn-withdraw.ts",
+    "example:earn-claim-fxn": "tsx example/earn-claim-fxn.ts",
+    "example:earn-claim-rewards": "tsx example/earn-claim-rewards.ts"
   },
   "license": "MIT",
   "devDependencies": {

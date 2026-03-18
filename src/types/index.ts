@@ -1,6 +1,8 @@
 export * from '@/types/pool'
 export * from '@/types/bridge'
 export * from '@/types/fxsave'
+export * from '@/types/lock'
+export * from '@/types/earn'
 import { ROUTE_TYPES } from '@/core/aggregators'
 
 /** Market type: 'ETH' or 'BTC' */

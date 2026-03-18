@@ -2,8 +2,26 @@ import { getClient } from '@/core/client'
 import { isAddress } from 'viem'
 import { Position } from '@/core/position'
 import { Pool } from '@/core/pool'
-import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest, Market, PositionType, BridgeQuoteRequest, BridgeQuoteResult, BuildBridgeTxRequest, BuildBridgeTxResult, GetFxSaveBalanceRequest, GetFxSaveBalanceResult, GetFxSaveConfigRequest, GetFxSaveConfigResult, GetFxSaveRedeemStatusRequest, GetFxSaveRedeemStatusResult, GetFxSaveClaimableRequest, GetFxSaveClaimableResult, GetRedeemTxRequest, GetRedeemTxResult, FxSaveDepositRequest, FxSaveDepositResult, FxSaveWithdrawRequest, FxSaveWithdrawResult } from '@/types'
+import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest, Market, PositionType, BridgeQuoteRequest, BridgeQuoteResult, BuildBridgeTxRequest, BuildBridgeTxResult, GetFxSaveBalanceRequest, GetFxSaveBalanceResult, GetFxSaveConfigRequest, GetFxSaveConfigResult, GetFxSaveRedeemStatusRequest, GetFxSaveRedeemStatusResult, GetFxSaveClaimableRequest, GetFxSaveClaimableResult, GetRedeemTxRequest, GetRedeemTxResult, FxSaveDepositRequest, FxSaveDepositResult, FxSaveWithdrawRequest, FxSaveWithdrawResult, GetLockInfoRequest, GetLockInfoResult, CreateLockRequest, CreateLockResult, IncreaseLockAmountRequest, IncreaseLockAmountResult, ExtendLockTimeRequest, ExtendLockTimeResult, WithdrawLockRequest, WithdrawLockResult, ClaimLockRewardsRequest, ClaimLockRewardsResult, DelegateBoostRequest, DelegateBoostResult, UndelegateBoostRequest, UndelegateBoostResult, GetGaugeListResult, GetEarnPositionRequest, GetEarnPositionResult, EarnDepositRequest, EarnDepositResult, EarnWithdrawRequest, EarnWithdrawResult, ClaimFxnRequest, ClaimFxnResult, ClaimRewardsRequest, ClaimRewardsResult } from '@/types'
 import { getBridgeQuote as getBridgeQuoteImpl, buildBridgeTx as buildBridgeTxImpl } from '@/bridge'
+import {
+  getLockInfo as getLockInfoImpl,
+  createLock as createLockImpl,
+  increaseLockAmount as increaseLockAmountImpl,
+  extendLockTime as extendLockTimeImpl,
+  withdrawLock as withdrawLockImpl,
+  claimLockRewards as claimLockRewardsImpl,
+  delegateBoost as delegateBoostImpl,
+  undelegateBoost as undelegateBoostImpl,
+} from '@/core/lock'
+import {
+  getGaugeList as getGaugeListImpl,
+  getEarnPosition as getEarnPositionImpl,
+  earnDeposit as earnDepositImpl,
+  earnWithdraw as earnWithdrawImpl,
+  claimFxn as claimFxnImpl,
+  claimRewards as claimRewardsImpl,
+} from '@/core/earn'
 import {
   getFxSaveBalance as getFxSaveBalanceImpl,
   getFxSaveConfig as getFxSaveConfigImpl,
@@ -528,5 +546,61 @@ export class FxSdk {
     request: FxSaveWithdrawRequest
   ): Promise<FxSaveWithdrawResult> {
     return withdrawFxSaveImpl(request)
+  }
+
+  async getLockInfo(request: GetLockInfoRequest): Promise<GetLockInfoResult> {
+    return getLockInfoImpl(request)
+  }
+
+  async createLock(request: CreateLockRequest): Promise<CreateLockResult> {
+    return createLockImpl(request)
+  }
+
+  async increaseLockAmount(request: IncreaseLockAmountRequest): Promise<IncreaseLockAmountResult> {
+    return increaseLockAmountImpl(request)
+  }
+
+  async extendLockTime(request: ExtendLockTimeRequest): Promise<ExtendLockTimeResult> {
+    return extendLockTimeImpl(request)
+  }
+
+  async withdrawLock(request: WithdrawLockRequest): Promise<WithdrawLockResult> {
+    return withdrawLockImpl(request)
+  }
+
+  async claimLockRewards(request: ClaimLockRewardsRequest): Promise<ClaimLockRewardsResult> {
+    return claimLockRewardsImpl(request)
+  }
+
+  async delegateBoost(request: DelegateBoostRequest): Promise<DelegateBoostResult> {
+    return delegateBoostImpl(request)
+  }
+
+  async undelegateBoost(request: UndelegateBoostRequest): Promise<UndelegateBoostResult> {
+    return undelegateBoostImpl(request)
+  }
+
+  async getGaugeList(): Promise<GetGaugeListResult> {
+    return getGaugeListImpl()
+  }
+
+  async getEarnPosition(request: GetEarnPositionRequest): Promise<GetEarnPositionResult> {
+    return getEarnPositionImpl(request)
+  }
+
+  async earnDeposit(request: EarnDepositRequest): Promise<EarnDepositResult> {
+    return earnDepositImpl(request)
+  }
+
+  async earnWithdraw(request: EarnWithdrawRequest): Promise<EarnWithdrawResult> {
+    return earnWithdrawImpl(request)
+  }
+
+  async claimFxn(request: ClaimFxnRequest): Promise<ClaimFxnResult> {
+    return claimFxnImpl(request)
+  }
+
+  async claimRewards(request: ClaimRewardsRequest): Promise<ClaimRewardsResult> {
+    return claimRewardsImpl(request)
   }
 }
