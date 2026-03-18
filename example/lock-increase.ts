@@ -1,5 +1,6 @@
 import { FxSdk } from '../src'
-import { formatEther } from 'viem'
+import { formatEther, parseEther, createPublicClient, createWalletClient, http, defineChain } from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
 import * as dotenv from 'dotenv'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -9,48 +10,76 @@ const __dirname = dirname(__filename)
 dotenv.config({ path: join(__dirname, '.env') })
 
 async function lockIncrease() {
-  let userAddress = process.env.USER_ADDRESS
-  if (!userAddress && process.env.PRIVATE_KEY) {
-    const { privateKeyToAccount } = await import('viem/accounts')
-    const privateKey = process.env.PRIVATE_KEY.startsWith('0x')
-      ? (process.env.PRIVATE_KEY as `0x${string}`)
-      : (`0x${process.env.PRIVATE_KEY}` as `0x${string}`)
-    userAddress = privateKeyToAccount(privateKey).address
+  if (!process.env.PRIVATE_KEY) throw new Error('PRIVATE_KEY must be set in .env')
+
+  const rawPk = process.env.PRIVATE_KEY
+  const pk = rawPk.startsWith('0x') ? rawPk as `0x${string}` : `0x${rawPk}` as `0x${string}`
+  const account     = privateKeyToAccount(pk)
+  const userAddress = account.address
+  const rpcUrl      = process.env.RPC_URL || 'https://ethereum-rpc.publicnode.com'
+  const chainId     = process.env.CHAIN_ID ? parseInt(process.env.CHAIN_ID, 10) : 1
+  if (isNaN(chainId) || chainId <= 0) throw new Error(`Invalid CHAIN_ID: ${process.env.CHAIN_ID}`)
+
+  const chain = defineChain({
+    id: chainId, name: `Chain ${chainId}`,
+    nativeCurrency: { decimals: 18, name: 'Ether', symbol: 'ETH' },
+    rpcUrls: { default: { http: [rpcUrl] } },
+  })
+
+  // Amount: LOCK_AMOUNT_FXN env var (decimal string) or default 10 FXN
+  let amount: bigint
+  if (process.env.LOCK_AMOUNT_FXN) {
+    const raw = process.env.LOCK_AMOUNT_FXN.trim()
+    if (!/^\d+(\.\d+)?$/.test(raw)) throw new Error(`Invalid LOCK_AMOUNT_FXN: "${raw}"`)
+    amount = parseEther(raw as `${number}`)
+    if (amount <= 0n) throw new Error('LOCK_AMOUNT_FXN must be greater than 0')
+  } else {
+    amount = 10n * 10n ** 18n
   }
-  if (!userAddress) throw new Error('USER_ADDRESS or PRIVATE_KEY must be set in .env')
 
-  const rpcUrl = process.env.RPC_URL || 'https://ethereum-rpc.publicnode.com'
-  const chainId = process.env.CHAIN_ID ? parseInt(process.env.CHAIN_ID) : 1
-  const sdk = new FxSdk({ rpcUrl, chainId })
+  const sdk          = new FxSdk({ rpcUrl, chainId })
+  const publicClient = createPublicClient({ chain, transport: http(rpcUrl) })
+  const walletClient = createWalletClient({ account, chain, transport: http(rpcUrl) })
 
-  // Amount to add; override via LOCK_AMOUNT_FXN env var (in FXN, not wei)
-  const fxnAmount = process.env.LOCK_AMOUNT_FXN
-    ? BigInt(Math.floor(parseFloat(process.env.LOCK_AMOUNT_FXN) * 1e18))
-    : 10n * 10n ** 18n  // default: 10 FXN
+  console.log('=== Increase Lock Amount ===')
+  console.log('Address:', userAddress)
 
-  console.log(`Building Lock increase for: ${userAddress}`)
-  console.log(`Amount to add:  ${formatEther(fxnAmount)} FXN\n`)
+  const before = await sdk.getLockInfo({ userAddress })
+  console.log('\n[Before]')
+  console.log('  lock status: ', before.lockStatus)
+  console.log('  lockedAmount:', formatEther(before.lockedAmount), 'FXN')
+  console.log('  lockEnd:     ', before.lockEnd > 0n ? new Date(Number(before.lockEnd) * 1000).toISOString() : 'N/A')
+  console.log('  vePower:     ', formatEther(before.vePower))
 
-  const info = await sdk.getLockInfo({ userAddress })
-  console.log('Lock status:   ', info.lockStatus)
-  console.log('Locked amount: ', formatEther(info.lockedAmount), 'FXN')
-  console.log('Lock end:      ', info.lockEnd > 0n
-    ? new Date(Number(info.lockEnd) * 1000).toISOString()
-    : 'N/A')
-  console.log('vePower:       ', formatEther(info.vePower))
-
-  if (info.lockStatus !== 'active') {
-    console.log(`\n⚠️  Cannot increase lock amount: status is '${info.lockStatus}'. Must have an active lock.`)
+  if (before.lockStatus !== 'active') {
+    console.log(`\n⚠️  Lock status is '${before.lockStatus}'. Need an active lock to increase amount.`)
     process.exit(0)
   }
 
-  // Returns approve FXN + increase_amount txs
-  const result = await sdk.increaseLockAmount({ userAddress, amount: fxnAmount })
+  console.log(`\nAdding ${formatEther(amount)} FXN to existing lock...`)
+  const result = await sdk.increaseLockAmount({ userAddress, amount })
+  console.log(`Transactions: ${result.txs.length}`)
 
-  console.log(`\nTransactions to execute: ${result.txs.length}`)
-  result.txs.forEach((tx, i) => {
-    console.log(`  [${i + 1}] ${tx.type}: to=${tx.to}`)
-  })
+  for (let i = 0; i < result.txs.length; i++) {
+    const tx = result.txs[i]
+    console.log(`\n[${i + 1}/${result.txs.length}] ${tx.type} → ${tx.to}`)
+    const hash = await walletClient.sendTransaction({
+      to: tx.to as `0x${string}`, data: tx.data as `0x${string}`, value: tx.value ?? 0n,
+    })
+    console.log('  hash:', hash)
+    const receipt = await publicClient.waitForTransactionReceipt({ hash })
+    console.log('  status:', receipt.status, '| block:', receipt.blockNumber.toString())
+    if (receipt.status !== 'success') throw new Error(`Transaction ${i + 1} reverted (hash: ${hash})`)
+  }
+
+  const after = await sdk.getLockInfo({ userAddress })
+  console.log('\n[After]')
+  console.log('  lockedAmount:', formatEther(after.lockedAmount), 'FXN')
+  console.log('  vePower:     ', formatEther(after.vePower))
+  console.log('\n✅ Done')
 }
 
-lockIncrease().catch(e => { console.error(e.message); process.exit(1) })
+lockIncrease().catch(e => {
+  console.error('Lock increase failed:', { message: e.message, stack: e.stack })
+  process.exit(1)
+})
