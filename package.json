@@ -53,6 +53,7 @@
     "example:lock-info": "tsx example/lock-info.ts",
     "example:lock-create": "tsx example/lock-create.ts",
     "example:lock-increase": "tsx example/lock-increase.ts",
+    "example:lock-extend": "tsx example/lock-extend.ts",
     "example:lock-withdraw": "tsx example/lock-withdraw.ts",
     "example:lock-claim-rewards": "tsx example/lock-claim-rewards.ts",
     "example:earn-gauge-list": "tsx example/earn-gauge-list.ts",
