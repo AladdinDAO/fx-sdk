@@ -94,13 +94,15 @@ export class Pool {
         { result: [bigint, bigint, bigint, bigint] },
         { result: [bigint, bigint, bigint, bigint] }
       ]
+      
+      const { isShort } = this.config
 
       return {
         collateralCapacity: poolInfoRes[0],
         collateralBalance: poolInfoRes[1],
-        rawCollateral: poolInfoRes[2],
-        debtCapacity: poolInfoRes[3],
-        debtBalance: poolInfoRes[4] || 0n,
+        rawCollateral: isShort ? 0n : poolInfoRes[2],
+        debtCapacity: isShort ? poolInfoRes[2] : poolInfoRes[3],
+        debtBalance: isShort ? poolInfoRes[3] : poolInfoRes[4],
 
         isPaused: pausedRes,
 
