@@ -1,5 +1,6 @@
 import { cBN } from '@/utils'
 import MultiPathConverterAbi from '@/abis/MultiPathConverter.json'
+import ConvertLensAbi from '@/abis/ConvertLens.json'
 import { Velora } from '@/core/aggregators/velora'
 import { Odos } from '@/core/aggregators/odos'
 import { FxRoute } from '@/core/aggregators/fxRoute'
@@ -14,7 +15,7 @@ import { tokens } from '@/configs/tokens'
 import { getZapRoutes } from '@/utils/zapRoute'
 export * from './types'
 
-const searchAmount = async (
+export const searchAmount = async (
   left: string,
   right: string,
   expect: string,
@@ -58,6 +59,47 @@ const searchAmount = async (
   }
   duration = new Date().getTime() - duration
   return [left, duration, times]
+}
+
+export const searchAmountIn = async (
+  left: string,
+  right: string,
+  expect: string,
+  convertData: ConvertData,
+  _precision: number = 1,
+  maxQueries: number = 100
+) => {
+  const client = getClient()
+
+  const routesAsBigInt = convertData.routes.map((r) => BigInt(r))
+
+  const { result } = await client.simulateContract({
+    address: contracts.ConvertLens as `0x${string}`,
+    abi: ConvertLensAbi as Abi,
+    functionName: 'searchAmountIn',
+    args: [
+      BigInt(expect),
+      convertData.encoding,
+      routesAsBigInt,
+      BigInt(left),
+      BigInt(right),
+      BigInt(Math.floor(_precision)),
+      BigInt(maxQueries),
+    ],
+  })
+
+  const [input, output, samplesHex] = result as [bigint, bigint, `0x${string}`]
+
+  // Decode packed samples: each 32-byte word = (uint128 input << 128) | uint128 output
+  const samples: [bigint, bigint][] = Array.from(
+    { length: (samplesHex.length - 2) / 64 },
+    (_, i) => [
+      BigInt('0x' + samplesHex.slice(2 + i * 64, 34 + i * 64)),
+      BigInt('0x' + samplesHex.slice(34 + i * 64, 66 + i * 64)),
+    ]
+  )
+
+  return { input, output, samples }
 }
 
 const selectBest = (

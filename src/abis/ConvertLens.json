@@ -1,0 +1,85 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_converter",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [],
+    "name": "converter",
+    "outputs": [
+      {
+        "internalType": "contract IMultiPathConverter",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "expect",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "encoding",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "routes",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lo",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "hi",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "precision",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "maxQueries",
+        "type": "uint256"
+      }
+    ],
+    "name": "searchAmountIn",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "input",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "output",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "samples",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]
