@@ -2,6 +2,8 @@ export const contracts = {
   TokenConverter_MultiPathConverter:
     "0x12AF4529129303D7FbD2563E242C4a2890525912",
 
+  ConvertLens: "0x49e2d22df7c9afea3b58ca9693305935f4d5967d",
+
   Router_Diamond: "0x33636D49FbefBE798e15e7F356E8DBef543CC708",
   FxMintRouter: "0xB753366082466c4B5984312f0c4Bb97554be067E",
 
