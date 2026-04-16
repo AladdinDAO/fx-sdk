@@ -92,3 +92,67 @@ export interface ClaimRewardsRequest {
 export interface ClaimRewardsResult {
   txs: FxSaveTx[]
 }
+
+/** Gauge base information from GaugeController. */
+export interface GaugeBaseInfo {
+  /** Total weight across all gauges. */
+  total_weight: bigint
+  /** Number of gauge types. */
+  n_gauge_types: number
+  /** FXN token emission rate per second. */
+  FXNRate: bigint
+  /** List of gauges with their information. */
+  GaugeList: GaugeDetailedInfo[]
+  /** Type weights for each gauge type. */
+  typesWeightDatas: TypeWeightData[]
+}
+
+/** Detailed information for a single gauge. */
+export interface GaugeDetailedInfo {
+  /** Gauge display name. */
+  name: string
+  /** Gauge contract address. */
+  gauge: string
+  /** LP token address. */
+  lpAddress: string
+  /** Gauge type index. */
+  gaugeType: number
+  /** Token symbol of the gauge. */
+  symbol?: string
+  /** Total supply of LP tokens staked. */
+  totalSupply?: bigint
+  /** Current gauge weight. */
+  gauge_weight?: bigint
+  /** This week's gauge relative weight. */
+  this_week_gauge_weight?: bigint
+  /** Next week's gauge relative weight. */
+  next_week_gauge_weight?: bigint
+}
+
+/** Type weight data for a gauge type. */
+export interface TypeWeightData {
+  /** Weight of this gauge type. */
+  type_weight: bigint
+  /** Sum of weights for this type. */
+  weights_sum_per_type: bigint
+}
+
+/** Request for getGaugeApy. */
+export interface GetGaugeApyRequest {
+  /** Gauge information including weight and TVL data. */
+  gaugeInfo: GaugeDetailedInfo
+  /** LP token price in USD. */
+  lpPrice: number
+  /** FXN token price in USD. */
+  fxnPrice: number
+  /** Gauge base information (weights, rates). */
+  baseInfo: GaugeBaseInfo
+}
+
+/** Result of getGaugeApy. */
+export interface GetGaugeApyResult {
+  /** This week's APY as percentage string. */
+  thisWeekApy: string
+  /** Next week's APY as percentage string. */
+  nextWeekApy: string
+}

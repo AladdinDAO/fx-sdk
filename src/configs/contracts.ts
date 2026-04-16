@@ -40,6 +40,7 @@ export const contracts = {
 
   // Earn
   FXN_TokenMinter: "0xC8b194925D55d5dE9555AD1db74c149329F71DeF",
+  GaugeController: "0xe60eB8098B34eD775ac44B1ddE864e098C6d7f37",
 
   // Tokens
   FXN_Token: "0x365AccFCa291e7D3914637ABf1F7635dB165Bb09",

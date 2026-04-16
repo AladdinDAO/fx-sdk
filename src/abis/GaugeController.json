@@ -1,0 +1,57 @@
+[
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "get_total_weight",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "n_gauge_types",
+    "inputs": [],
+    "outputs": [{ "name": "", "type": "int128" }]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "get_gauge_weight",
+    "inputs": [{ "name": "addr", "type": "address" }],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "get_type_weight",
+    "inputs": [{ "name": "type_id", "type": "int128" }],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "get_weights_sum_per_type",
+    "inputs": [{ "name": "type_id", "type": "int128" }],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "gauge_relative_weight",
+    "inputs": [
+      { "name": "addr", "type": "address" },
+      { "name": "time", "type": "uint256" }
+    ],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "gauge_relative_weight_write",
+    "inputs": [
+      { "name": "addr", "type": "address" },
+      { "name": "time", "type": "uint256" }
+    ],
+    "outputs": [{ "name": "", "type": "uint256" }]
+  }
+]

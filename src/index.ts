@@ -64,6 +64,11 @@ export type {
   ClaimFxnResult,
   ClaimRewardsRequest,
   ClaimRewardsResult,
+  GaugeBaseInfo,
+  GaugeDetailedInfo,
+  TypeWeightData,
+  GetGaugeApyRequest,
+  GetGaugeApyResult,
 } from "./types";
 export type { PoolName, PoolConfig, PoolInfo } from "./types/pool";
 export {
