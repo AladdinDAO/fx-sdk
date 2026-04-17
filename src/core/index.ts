@@ -2,8 +2,29 @@ import { getClient } from '@/core/client'
 import { isAddress } from 'viem'
 import { Position } from '@/core/position'
 import { Pool } from '@/core/pool'
-import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest, Market, PositionType, BridgeQuoteRequest, BridgeQuoteResult, BuildBridgeTxRequest, BuildBridgeTxResult, GetFxSaveBalanceRequest, GetFxSaveBalanceResult, GetFxSaveConfigRequest, GetFxSaveConfigResult, GetFxSaveRedeemStatusRequest, GetFxSaveRedeemStatusResult, GetFxSaveClaimableRequest, GetFxSaveClaimableResult, GetRedeemTxRequest, GetRedeemTxResult, FxSaveDepositRequest, FxSaveDepositResult, FxSaveWithdrawRequest, FxSaveWithdrawResult } from '@/types'
+import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest, Market, PositionType, BridgeQuoteRequest, BridgeQuoteResult, BuildBridgeTxRequest, BuildBridgeTxResult, GetFxSaveBalanceRequest, GetFxSaveBalanceResult, GetFxSaveConfigRequest, GetFxSaveConfigResult, GetFxSaveRedeemStatusRequest, GetFxSaveRedeemStatusResult, GetFxSaveClaimableRequest, GetFxSaveClaimableResult, GetRedeemTxRequest, GetRedeemTxResult, FxSaveDepositRequest, FxSaveDepositResult, FxSaveWithdrawRequest, FxSaveWithdrawResult, GetLockInfoRequest, GetLockInfoResult, CreateLockRequest, CreateLockResult, IncreaseLockAmountRequest, IncreaseLockAmountResult, ExtendLockTimeRequest, ExtendLockTimeResult, WithdrawLockRequest, WithdrawLockResult, ClaimLockRewardsRequest, ClaimLockRewardsResult, DelegateBoostRequest, DelegateBoostResult, UndelegateBoostRequest, UndelegateBoostResult, GetGaugeListResult, GetEarnPositionRequest, GetEarnPositionResult, EarnDepositRequest, EarnDepositResult, EarnWithdrawRequest, EarnWithdrawResult, ClaimFxnRequest, ClaimFxnResult, ClaimRewardsRequest, ClaimRewardsResult, GaugeInfo, GaugeBaseInfo, GetGaugeApyRequest, GetGaugeApyResult } from '@/types'
 import { getBridgeQuote as getBridgeQuoteImpl, buildBridgeTx as buildBridgeTxImpl } from '@/bridge'
+import {
+  getLockInfo as getLockInfoImpl,
+  createLock as createLockImpl,
+  increaseLockAmount as increaseLockAmountImpl,
+  extendLockTime as extendLockTimeImpl,
+  withdrawLock as withdrawLockImpl,
+  claimLockRewards as claimLockRewardsImpl,
+  delegateBoost as delegateBoostImpl,
+  undelegateBoost as undelegateBoostImpl,
+} from '@/core/lock'
+import {
+  getGaugeList as getGaugeListImpl,
+  getGaugeBaseInfo as getGaugeBaseInfoImpl,
+  getGaugeApy as getGaugeApyImpl,
+  getConvexExtraApy as getConvexExtraApyImpl,
+  getEarnPosition as getEarnPositionImpl,
+  earnDeposit as earnDepositImpl,
+  earnWithdraw as earnWithdrawImpl,
+  claimFxn as claimFxnImpl,
+  claimRewards as claimRewardsImpl,
+} from '@/core/earn'
 import {
   getFxSaveBalance as getFxSaveBalanceImpl,
   getFxSaveConfig as getFxSaveConfigImpl,
@@ -528,5 +549,88 @@ export class FxSdk {
     request: FxSaveWithdrawRequest
   ): Promise<FxSaveWithdrawResult> {
     return withdrawFxSaveImpl(request)
+  }
+
+  async getLockInfo(request: GetLockInfoRequest): Promise<GetLockInfoResult> {
+    return getLockInfoImpl(request)
+  }
+
+  async createLock(request: CreateLockRequest): Promise<CreateLockResult> {
+    return createLockImpl(request)
+  }
+
+  async increaseLockAmount(request: IncreaseLockAmountRequest): Promise<IncreaseLockAmountResult> {
+    return increaseLockAmountImpl(request)
+  }
+
+  async extendLockTime(request: ExtendLockTimeRequest): Promise<ExtendLockTimeResult> {
+    return extendLockTimeImpl(request)
+  }
+
+  async withdrawLock(request: WithdrawLockRequest): Promise<WithdrawLockResult> {
+    return withdrawLockImpl(request)
+  }
+
+  async claimLockRewards(request: ClaimLockRewardsRequest): Promise<ClaimLockRewardsResult> {
+    return claimLockRewardsImpl(request)
+  }
+
+  async delegateBoost(request: DelegateBoostRequest): Promise<DelegateBoostResult> {
+    return delegateBoostImpl(request)
+  }
+
+  async undelegateBoost(request: UndelegateBoostRequest): Promise<UndelegateBoostResult> {
+    return undelegateBoostImpl(request)
+  }
+
+  async getGaugeList(): Promise<GetGaugeListResult> {
+    return getGaugeListImpl()
+  }
+
+  async getEarnPosition(request: GetEarnPositionRequest): Promise<GetEarnPositionResult> {
+    return getEarnPositionImpl(request)
+  }
+
+  async earnDeposit(request: EarnDepositRequest): Promise<EarnDepositResult> {
+    return earnDepositImpl(request)
+  }
+
+  async earnWithdraw(request: EarnWithdrawRequest): Promise<EarnWithdrawResult> {
+    return earnWithdrawImpl(request)
+  }
+
+  async claimFxn(request: ClaimFxnRequest): Promise<ClaimFxnResult> {
+    return claimFxnImpl(request)
+  }
+
+  async claimRewards(request: ClaimRewardsRequest): Promise<ClaimRewardsResult> {
+    return claimRewardsImpl(request)
+  }
+
+  /**
+   * Fetches comprehensive gauge base information from GaugeController.
+   * Returns FXN rate, gauge weights, type weights, and detailed gauge list.
+   * @param gaugeList - List of gauges from getGaugeList
+   * @returns Gauge base information with weights and rates
+   */
+  async getGaugeBaseInfo(gaugeList: GaugeInfo[]): Promise<GaugeBaseInfo> {
+    return getGaugeBaseInfoImpl(gaugeList)
+  }
+
+  /**
+   * Calculates APY for a gauge based on FXN emission, weights, and TVL.
+   * @param request - Gauge info, prices, and base data
+   * @returns This week's and next week's APY as percentage strings, plus total APY including extra rewards
+   */
+  async getGaugeApy(request: GetGaugeApyRequest): Promise<GetGaugeApyResult> {
+    return getGaugeApyImpl(request)
+  }
+
+  /**
+   * Fetches Convex extra reward APY for all LP pools.
+   * @returns Map of LP address (lowercase) to extra APY percentage
+   */
+  async getConvexExtraApy(): Promise<Record<string, number>> {
+    return getConvexExtraApyImpl()
   }
 }
