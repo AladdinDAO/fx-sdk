@@ -57,6 +57,8 @@
     "example:lock-withdraw": "tsx example/lock-withdraw.ts",
     "example:lock-claim-rewards": "tsx example/lock-claim-rewards.ts",
     "example:earn-gauge-list": "tsx example/earn-gauge-list.ts",
+    "example:earn-apy": "tsx example/earn-apy.ts",
+    "example:earn-rewards": "tsx example/earn-rewards.ts",
     "example:earn-deposit": "tsx example/earn-deposit.ts",
     "example:earn-withdraw": "tsx example/earn-withdraw.ts",
     "example:earn-claim-fxn": "tsx example/earn-claim-fxn.ts",
