@@ -1,8 +1,26 @@
+/**
+ * Check user rewards for ETH+FXN pool
+ *
+ * Usage:
+ *   npx tsx scripts/check-user-rewards.ts <user_address>
+ *
+ * Example:
+ *   npx tsx scripts/check-user-rewards.ts 0x1234567890123456789012345678901234567890
+ */
+
 import { FxSdk } from '../src'
 import { getClient } from '../src/core/client'
 import SharedLiquidityGaugeAbi from '../src/abis/SharedLiquidityGauge.json'
 
-const USER_ADDRESS = '0xf3e0974A5fEcFE4173e454993406243B2188EeeD'
+// Get user address from command line argument or use test address
+const USER_ADDRESS = process.argv[2] || '0x1234567890123456789012345678901234567890'
+
+if (!/^0x[0-9a-fA-F]{40}$/.test(USER_ADDRESS)) {
+  console.error('❌ Invalid Ethereum address format')
+  console.error('Usage: npx tsx scripts/check-user-rewards.ts <user_address>')
+  console.error('Example: npx tsx scripts/check-user-rewards.ts 0x1234567890123456789012345678901234567890')
+  process.exit(1)
+}
 
 async function main() {
   const sdk = new FxSdk()
