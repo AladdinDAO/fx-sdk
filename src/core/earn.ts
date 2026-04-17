@@ -71,13 +71,13 @@ export async function getDirectGaugeSet(): Promise<Set<string>> {
  */
 export async function getConvexExtraApy(): Promise<Record<string, number>> {
   try {
-    // 获取直接 gauge 集合（用于判断哪些池子没有 CRV/CVX 奖励）
+    // Get direct gauge set (to identify pools without CRV/CVX rewards)
     const directGaugeSet = await getDirectGaugeSet()
 
     const response = await axios.get(CONVEX_API, { timeout: 10000 })
     const data = response.data?.data
 
-    // 验证数据格式
+    // Validate data format
     if (!Array.isArray(data)) {
       console.warn('⚠️  Convex API returned non-array data')
       return {}
@@ -85,20 +85,20 @@ export async function getConvexExtraApy(): Promise<Record<string, number>> {
 
     const convexApys: Record<string, number> = {}
     for (const pool of data) {
-      // 验证 pool 对象存在
+      // Validate pool object exists
       if (!pool || typeof pool !== 'object') continue
 
-      // 验证必需字段
+      // Validate required fields
       const address = pool.address
       if (!address || typeof address !== 'string') continue
 
-      // 验证地址格式
+      // Validate address format
       if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
         console.warn(`⚠️  Invalid LP address format: ${address}`)
         continue
       }
 
-      // 检查是否为直接 gauge（没有 CRV/CVX 奖励）
+      // Check if direct gauge (no CRV/CVX rewards)
       const isDirectGauge = directGaugeSet.has(address.toLowerCase())
 
       const currentApys = pool.currentApys
@@ -107,7 +107,7 @@ export async function getConvexExtraApy(): Promise<Record<string, number>> {
       let extraApy = 0
 
       if (isDirectGauge) {
-        // 直接 gauge：只有 baseApy（交易费等基础收益），没有 CRV/CVX
+        // Direct gauge: only baseApy (trading fees etc), no CRV/CVX
         if (curveApys && typeof curveApys === 'object') {
           const baseApy = Number(curveApys.baseApy || 0)
           if (isNaN(baseApy) || !isFinite(baseApy)) {
@@ -116,40 +116,40 @@ export async function getConvexExtraApy(): Promise<Record<string, number>> {
           extraApy = baseApy
         }
       } else {
-        // 普通 gauge：baseApy + crvApy + cvxApy
+        // Normal gauge: baseApy + crvApy + cvxApy
         if (currentApys && typeof currentApys === 'object') {
           const baseApy = Number(currentApys.baseApy || 0)
           let crvApy = Number(currentApys.crvApy || 0)
           let cvxApy = Number(currentApys.cvxApy || 0)
 
-          // 如果 currentApys 中的值是 0 或 NaN，说明当前没有发放 CRV/CVX
+          // If currentApys values are 0 or NaN, rewards are not currently distributed
           if (crvApy === 0 || isNaN(crvApy) || cvxApy === 0 || isNaN(cvxApy)) {
-            // 当前没有发放，只显示 baseApy
+            // No current distribution, only show baseApy
             extraApy = baseApy
           } else {
-            // 当前有发放，使用完整的 APY
+            // Currently distributing, use full APY
             extraApy = baseApy + crvApy + cvxApy
           }
         } else if (curveApys && typeof curveApys === 'object') {
-          // fallback 到 curveApys
+          // Fallback to curveApys
           const baseApy = Number(curveApys.baseApy || 0)
           extraApy = baseApy
         }
       }
 
-      // 验证 APY 值有效性
+      // Validate APY value
       if (isNaN(extraApy) || !isFinite(extraApy)) {
         console.warn(`⚠️  Invalid APY value for ${address}`)
         continue
       }
 
-      // 过滤异常值（负数或过大）
+      // Filter outliers (negative or too large)
       if (extraApy < 0 || extraApy > 1000) {
         console.warn(`⚠️  APY out of reasonable range for ${address}: ${extraApy}%`)
         continue
       }
 
-      // 只保存有 APY 的池子
+      // Only save pools with APY
       if (extraApy > 0) {
         convexApys[address.toLowerCase()] = extraApy
       }
@@ -241,33 +241,112 @@ export async function getEarnPosition(
 
   const client = getClient()
 
-  const [stakedBalance, integrateFraction, minted] = await Promise.all([
-    client.readContract({
-      address: gaugeAddress as `0x${string}`,
-      abi: SharedLiquidityGaugeAbi,
-      functionName: 'balanceOf',
-      args: [userAddress as `0x${string}`],
-    }) as Promise<bigint>,
-    client.readContract({
-      address: gaugeAddress as `0x${string}`,
-      abi: SharedLiquidityGaugeAbi,
-      functionName: 'integrate_fraction',
-      args: [userAddress as `0x${string}`],
-    }) as Promise<bigint>,
-    client.readContract({
-      address: contracts.FXN_TokenMinter as `0x${string}`,
-      abi: FXNTokenMinterAbi,
-      functionName: 'minted',
-      args: [userAddress as `0x${string}`, gaugeAddress as `0x${string}`],
-    }) as Promise<bigint>,
-  ])
+  // Use multicall to fetch all basic position info and FXN rewards at once
+  // Follow official code order: claimHistorical MUST be called before integrate_fraction
+  const results = await client.multicall({
+    contracts: [
+      // 1. claimHistorical - MUST be called before integrate_fraction to update user rewards
+      {
+        address: gaugeAddress as `0x${string}`,
+        abi: SharedLiquidityGaugeAbi,
+        functionName: 'claimHistorical',
+        args: [userAddress as `0x${string}`, []],
+      },
+      // 2. Get staked balance
+      {
+        address: gaugeAddress as `0x${string}`,
+        abi: SharedLiquidityGaugeAbi,
+        functionName: 'balanceOf',
+        args: [userAddress as `0x${string}`],
+      },
+      // 3. Get claimed FXN amount (minted from TokenMinter)
+      {
+        address: contracts.FXN_TokenMinter as `0x${string}`,
+        abi: FXNTokenMinterAbi,
+        functionName: 'minted',
+        args: [userAddress as `0x${string}`, gaugeAddress as `0x${string}`],
+      },
+      // 4. Get cumulative rewards (integrate_fraction) - MUST be called after claimHistorical
+      {
+        address: gaugeAddress as `0x${string}`,
+        abi: SharedLiquidityGaugeAbi,
+        functionName: 'integrate_fraction',
+        args: [userAddress as `0x${string}`],
+      },
+    ],
+    allowFailure: true,
+  })
 
+  const stakedBalance = results[1].result as bigint
+  const minted = results[2].result as bigint
+  const integrateFraction = results[3].result as bigint
+
+  // Pending FXN = integrate_fraction - minted
   const pendingFxn = integrateFraction - minted
+
+  // Get extra reward tokens
+  const pendingRewards: Record<string, bigint> = {}
+  try {
+    // Get active reward tokens list
+    const rewardTokens = await client.readContract({
+      address: gaugeAddress as `0x${string}`,
+      abi: SharedLiquidityGaugeAbi,
+      functionName: 'getActiveRewardTokens',
+    }) as string[]
+
+    // Validate return value is array
+    if (!Array.isArray(rewardTokens)) {
+      console.warn('getActiveRewardTokens returned non-array result')
+      return { stakedBalance, pendingFxn, pendingRewards }
+    }
+
+    if (rewardTokens.length > 0) {
+      // Use multicall to fetch all claimable rewards at once
+      const claimableCalls = rewardTokens
+        .filter((tokenAddress) => isAddress(tokenAddress))
+        .map((tokenAddress) => ({
+          address: gaugeAddress as `0x${string}`,
+          abi: SharedLiquidityGaugeAbi,
+          functionName: 'claimable' as const,
+          args: [userAddress as `0x${string}`, tokenAddress as `0x${string}`],
+        }))
+
+      const claimableResults = await client.multicall({
+        contracts: claimableCalls,
+        allowFailure: true,
+      })
+
+      // Process results
+      for (let i = 0; i < rewardTokens.length; i++) {
+        const tokenAddress = rewardTokens[i]
+        if (!isAddress(tokenAddress)) {
+          console.warn(`Invalid reward token address: ${tokenAddress}`)
+          continue
+        }
+
+        const result = claimableResults[i]
+        if (result.status === 'success' && result.result && result.result > 0n) {
+          pendingRewards[tokenAddress] = result.result as bigint
+        } else if (result.status === 'failure') {
+          console.warn(
+            `Failed to fetch claimable for token ${tokenAddress}:`,
+            result.error?.message || 'Unknown error'
+          )
+        }
+      }
+    }
+  } catch (error) {
+    // If fetching extra rewards fails, pendingRewards stays empty object
+    console.warn(
+      'Failed to fetch extra rewards:',
+      error instanceof Error ? error.message : error
+    )
+  }
 
   return {
     stakedBalance,
     pendingFxn,
-    pendingRewards: {},
+    pendingRewards,
   }
 }
 
@@ -562,7 +641,7 @@ export function getGaugeApy(request: GetGaugeApyRequest): GetGaugeApyResult {
   // Convert to string only at the end (final step)
   const thisWeekApy = thisWeekApyValue.toFixed(2)
   const nextWeekApy = nextWeekApyValue.toFixed(2)
-  // 只有当 convexExtraApy 明确传入时才显示 extraApy（包括 0）
+  // Only show extraApy when convexExtraApy is explicitly passed (including 0)
   const extraApy = convexExtraApy !== undefined ? extraApyValue.toFixed(2) : undefined
   const totalApy = totalApyValue.toFixed(2)
 
