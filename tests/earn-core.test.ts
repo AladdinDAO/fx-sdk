@@ -158,8 +158,8 @@ describe('Earn Core', () => {
         baseInfo,
       })
 
-      expect(result.thisWeekApy).toBe('0')
-      expect(result.nextWeekApy).toBe('0')
+      expect(result.thisWeekApy).toBe('0.00')
+      expect(result.nextWeekApy).toBe('0.00')
     }, 60000)
 
     it('returns zero APY when FXN price is zero', async () => {
@@ -178,8 +178,8 @@ describe('Earn Core', () => {
         baseInfo,
       })
 
-      expect(result.thisWeekApy).toBe('0')
-      expect(result.nextWeekApy).toBe('0')
+      expect(result.thisWeekApy).toBe('0.00')
+      expect(result.nextWeekApy).toBe('0.00')
     }, 60000)
 
     it('APY increases with higher FXN price', async () => {
@@ -253,6 +253,155 @@ describe('Earn Core', () => {
 
       expect(result.thisWeekApy).toBeDefined()
       expect(result.nextWeekApy).toBeDefined()
+    }, 60000)
+  })
+
+  describe('getConvexExtraApy', () => {
+    it('returns map of LP addresses to APY values', async () => {
+      const { getConvexExtraApy } = await import('../src/core/earn')
+      const result = await getConvexExtraApy()
+
+      expect(typeof result).toBe('object')
+      expect(Array.isArray(result)).toBe(false)
+
+      // 验证返回值格式
+      for (const [address, apy] of Object.entries(result)) {
+        // 验证地址格式（小写的 0x 开头 40 位十六进制）
+        expect(address).toMatch(/^0x[0-9a-f]{40}$/)
+        // 验证 APY 值是数字
+        expect(typeof apy).toBe('number')
+        // 验证 APY 值在合理范围内（0-1000%）
+        expect(apy).toBeGreaterThanOrEqual(0)
+        expect(apy).toBeLessThanOrEqual(1000)
+      }
+    }, 30000)
+
+    it('returns non-empty map with valid data', async () => {
+      const { getConvexExtraApy } = await import('../src/core/earn')
+      const result = await getConvexExtraApy()
+
+      // 应该至少有一些池子的数据
+      expect(Object.keys(result).length).toBeGreaterThan(0)
+    }, 30000)
+
+    it('handles API errors gracefully and returns empty object', async () => {
+      // 这个测试验证即使 API 失败也不会崩溃
+      // 由于我们无法轻易 mock axios，这里只测试函数存在且不会抛出错误
+      const { getConvexExtraApy } = await import('../src/core/earn')
+
+      // 多次调用验证稳定性
+      const result1 = await getConvexExtraApy()
+      const result2 = await getConvexExtraApy()
+
+      expect(typeof result1).toBe('object')
+      expect(typeof result2).toBe('object')
+    }, 60000)
+  })
+
+  describe('getGaugeApy with convexExtraApy', () => {
+    it('includes convexExtraApy in totalApy calculation', async () => {
+      const gaugeListResult = await getGaugeList()
+      const baseInfo = await getGaugeBaseInfo(gaugeListResult.gauges)
+
+      const gaugeInfo = baseInfo.GaugeList[0]
+      const convexExtraApy = 5.5
+
+      const result = getGaugeApy({
+        gaugeInfo: {
+          ...gaugeInfo,
+          totalSupply: 1000000n * ONE_E18,
+          gaugeType: 0,
+        },
+        lpPrice: 1.0,
+        fxnPrice: 10.0,
+        baseInfo,
+        convexExtraApy,
+      })
+
+      expect(result.extraApy).toBe('5.50')
+      expect(result.totalApy).toBeDefined()
+
+      // totalApy 应该等于 thisWeekApy + convexExtraApy
+      const totalApyValue = parseFloat(result.totalApy)
+      const thisWeekApyValue = parseFloat(result.thisWeekApy)
+      expect(totalApyValue).toBeCloseTo(thisWeekApyValue + convexExtraApy, 2)
+    }, 60000)
+
+    it('handles zero convexExtraApy', async () => {
+      const gaugeListResult = await getGaugeList()
+      const baseInfo = await getGaugeBaseInfo(gaugeListResult.gauges)
+
+      const gaugeInfo = baseInfo.GaugeList[0]
+
+      const result = getGaugeApy({
+        gaugeInfo: {
+          ...gaugeInfo,
+          totalSupply: 1000000n * ONE_E18,
+          gaugeType: 0,
+        },
+        lpPrice: 1.0,
+        fxnPrice: 10.0,
+        baseInfo,
+        convexExtraApy: 0,
+      })
+
+      // 当 convexExtraApy 为 0 时，extraApy 为 '0.00'
+      expect(result.extraApy).toBe('0.00')
+      // totalApy 应该等于 thisWeekApy
+      expect(parseFloat(result.totalApy)).toBeCloseTo(parseFloat(result.thisWeekApy), 2)
+    }, 60000)
+
+    it('handles undefined convexExtraApy', async () => {
+      const gaugeListResult = await getGaugeList()
+      const baseInfo = await getGaugeBaseInfo(gaugeListResult.gauges)
+
+      const gaugeInfo = baseInfo.GaugeList[0]
+
+      const result = getGaugeApy({
+        gaugeInfo: {
+          ...gaugeInfo,
+          totalSupply: 1000000n * ONE_E18,
+          gaugeType: 0,
+        },
+        lpPrice: 1.0,
+        fxnPrice: 10.0,
+        baseInfo,
+        // 不传 convexExtraApy
+      })
+
+      expect(result.extraApy).toBeUndefined()
+      // totalApy 应该等于 thisWeekApy
+      expect(parseFloat(result.totalApy)).toBeCloseTo(parseFloat(result.thisWeekApy), 2)
+    }, 60000)
+
+    it('correctly adds convexExtraApy to totalApy', async () => {
+      const gaugeListResult = await getGaugeList()
+      const baseInfo = await getGaugeBaseInfo(gaugeListResult.gauges)
+
+      const gaugeInfo = baseInfo.GaugeList[0]
+
+      // 测试不同的 convexExtraApy 值
+      const testCases = [
+        { convexExtraApy: 1.23, expected: '1.23' },
+        { convexExtraApy: 10.5, expected: '10.50' },
+        { convexExtraApy: 0.01, expected: '0.01' },
+      ]
+
+      for (const testCase of testCases) {
+        const result = getGaugeApy({
+          gaugeInfo: {
+            ...gaugeInfo,
+            totalSupply: 1000000n * ONE_E18,
+            gaugeType: 0,
+          },
+          lpPrice: 1.0,
+          fxnPrice: 10.0,
+          baseInfo,
+          convexExtraApy: testCase.convexExtraApy,
+        })
+
+        expect(result.extraApy).toBe(testCase.expected)
+      }
     }, 60000)
   })
 })

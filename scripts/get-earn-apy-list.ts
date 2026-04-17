@@ -16,7 +16,7 @@
  * 参考: https://aladdin.club 获取完整的 boost 实现
  */
 
-import { getGaugeList, getGaugeBaseInfo, getGaugeApy } from '../src/core/earn'
+import { getGaugeList, getGaugeBaseInfo, getGaugeApy, getConvexExtraApy } from '../src/core/earn'
 import { getClient } from '../src/core/client'
 import SharedLiquidityGaugeAbi from '../src/abis/SharedLiquidityGauge.json'
 
@@ -68,14 +68,16 @@ async function main() {
   console.log('📊 Fetching Earn APY List...\n')
 
   try {
-    // 1. 获取价格数据
-    console.log('💰 Step 1: Fetching prices from API...')
-    const [lpPrices, fxnPrice] = await Promise.all([
+    // 1. 获取价格数据和扩展APY
+    console.log('💰 Step 1: Fetching prices and extra APY from API...')
+    const [lpPrices, fxnPrice, convexExtraApys] = await Promise.all([
       fetchLpPrices(),
       fetchFxnPrice(),
+      getConvexExtraApy(),
     ])
     console.log(`✅ Fetched ${Object.keys(lpPrices).length} LP prices`)
-    console.log(`✅ FXN Price: $${fxnPrice.toFixed(2)}\n`)
+    console.log(`✅ FXN Price: $${fxnPrice.toFixed(2)}`)
+    console.log(`✅ Convex Extra APY: ${Object.keys(convexExtraApys).length} pools\n`)
 
     // 2. 获取 gauge 列表
     console.log('🔍 Step 2: Fetching gauge list...')
@@ -89,15 +91,18 @@ async function main() {
     console.log(`✅ Gauge Types: ${baseInfo.n_gauge_types}`)
     console.log(`✅ Total Weight: ${baseInfo.total_weight.toString()}\n`)
 
-    // 4. 计算每个 gauge 的 APY
-    console.log('💰 Step 4: Calculating APY for each gauge...\n')
-    console.log('═'.repeat(80))
+    // 4. 计算每个 gauge 的 APY 和奖励信息
+    console.log('💰 Step 4: Calculating APY and rewards for each gauge...\n')
+    console.log('═'.repeat(140))
     console.log(
-      '📈 APY List'.padEnd(50) +
-      'This Week APY'.padStart(15) +
-      'TVL'.padStart(20)
+      '📈 Pool'.padEnd(40) +
+      'Total APY'.padStart(10) +
+      'FXN APY'.padStart(10) +
+      'Extra APY'.padStart(10) +
+      'Rewards'.padStart(25) +
+      'TVL'.padStart(12)
     )
-    console.log('═'.repeat(80))
+    console.log('═'.repeat(140))
 
     const apyList = []
     const client = getClient()
@@ -124,6 +129,10 @@ async function main() {
         }
 
         // 计算 APY
+        // getConvexExtraApy 返回的键都是小写，统一转换
+        const lpAddressKey = gaugeInfo.lpAddress.toLowerCase()
+        const convexExtraApy = convexExtraApys[lpAddressKey] ?? 0
+
         const apyResult = getGaugeApy({
           gaugeInfo: {
             ...gaugeInfo,
@@ -133,31 +142,104 @@ async function main() {
           lpPrice,
           fxnPrice,
           baseInfo,
+          convexExtraApy,
         })
 
         // 计算 TVL
         const tvl = (Number(totalSupply) / 1e18) * lpPrice
 
+        // 获取奖励代币信息
+        let rewardsStr = 'N/A'
+        try {
+          // 获取活跃的奖励代币列表
+          const rewardTokens = await client.readContract({
+            address: gaugeInfo.gauge as `0x${string}`,
+            abi: SharedLiquidityGaugeAbi,
+            functionName: 'getActiveRewardTokens',
+          }) as string[]
+
+          if (rewardTokens && rewardTokens.length > 0) {
+            const rewardInfoList = []
+
+            for (const tokenAddress of rewardTokens) {
+              try {
+                // 获取奖励数据 (rate, finishAt)
+                const rewardData = await client.readContract({
+                  address: gaugeInfo.gauge as `0x${string}`,
+                  abi: SharedLiquidityGaugeAbi,
+                  functionName: 'rewardData',
+                  args: [tokenAddress as `0x${string}`],
+                }) as [bigint, bigint, bigint, bigint] // [queued, rate, lastUpdate, finishAt]
+
+                const rate = rewardData[1] // 每秒奖励速率
+                const finishAt = rewardData[3] // 奖励结束时间
+
+                // 计算每周奖励数量
+                const ratePerSecond = Number(rate) / 1e18
+                const rewardsPerWeek = ratePerSecond * 7 * 24 * 60 * 60
+
+                // 只显示有效的奖励（速率 > 0 且未过期）
+                const now = Math.floor(Date.now() / 1000)
+                if (ratePerSecond > 0 && Number(finishAt) > now) {
+                  // 简化代币地址显示
+                  const tokenLabel = tokenAddress.slice(0, 6) + '...' + tokenAddress.slice(-4)
+                  rewardInfoList.push(`${tokenLabel}: ${rewardsPerWeek.toFixed(2)}/wk`)
+                }
+              } catch {
+                // 跳过无法获取的代币
+              }
+            }
+
+            if (rewardInfoList.length > 0) {
+              rewardsStr = rewardInfoList.join(', ')
+            } else {
+              rewardsStr = 'None'
+            }
+          } else {
+            rewardsStr = 'None'
+          }
+        } catch {
+          rewardsStr = 'N/A'
+        }
+
         // 格式化输出
         const name = gaugeInfo.name || 'Unknown'
-        const thisWeekApy = parseFloat(apyResult.thisWeekApy)
-        const nextWeekApy = parseFloat(apyResult.nextWeekApy)
+        const totalApy = parseFloat(apyResult.totalApy)
+        const fxnApy = parseFloat(apyResult.thisWeekApy)
+        const extraApy = parseFloat(apyResult.extraApy || '0')
         const tvlStr = tvl > 0 ? `$${tvl.toLocaleString('en-US', { maximumFractionDigits: 0 })}` : 'N/A'
 
+        // 缩短 rewardsStr 如果太长
+        let displayRewards = rewardsStr
+        if (rewardsStr.length > 30) {
+          // 找到第一个逗号，在第一个奖励后截断
+          const firstComma = rewardsStr.indexOf(', ')
+          if (firstComma > 0 && firstComma < 30) {
+            displayRewards = rewardsStr.slice(0, firstComma) + ', ...'
+          } else {
+            displayRewards = rewardsStr.slice(0, 27) + '...'
+          }
+        }
+
         console.log(
-          `${name.padEnd(50)}` +
-          `${apyResult.thisWeekApy}%`.padStart(15) +
-          `TVL: ${tvlStr}`.padStart(20)
+          `${name.padEnd(40)}` +
+          `${apyResult.totalApy}%`.padStart(10) +
+          `${apyResult.thisWeekApy}%`.padStart(10) +
+          `${apyResult.extraApy || '0.00'}%`.padStart(10) +
+          `${displayRewards}`.padStart(28) +
+          `$${tvl.toLocaleString('en-US', { maximumFractionDigits: 0 })}`.padStart(12)
         )
 
         apyList.push({
           name,
           gauge: gaugeInfo.gauge,
-          thisWeekApy,
-          nextWeekApy,
+          thisWeekApy: totalApy,
+          nextWeekApy: parseFloat(apyResult.nextWeekApy),
           tvl,
           lpPrice,
           fxnPrice,
+          extraApy,
+          fxnApy,
         })
       } catch (error) {
         console.error(
@@ -167,20 +249,24 @@ async function main() {
       }
     }
 
-    console.log('═'.repeat(80))
+    console.log('═'.repeat(140))
 
-    // 4. 统计摘要
+    // 5. 统计摘要
     const validApys = apyList.filter((a) => a.thisWeekApy > 0)
     if (validApys.length > 0) {
       const avgApy =
         validApys.reduce((sum, a) => sum + a.thisWeekApy, 0) / validApys.length
       const maxApy = Math.max(...validApys.map((a) => a.thisWeekApy))
       const minApy = Math.min(...validApys.map((a) => a.thisWeekApy))
+      const avgFxnApy =
+        validApys.reduce((sum, a) => sum + (a as any).fxnApy, 0) / validApys.length
+      const avgExtraApy =
+        validApys.reduce((sum, a) => sum + ((a as any).extraApy || 0), 0) / validApys.length
 
       console.log('\n📊 Statistics:')
       console.log(`   Total Gauges: ${apyList.length}`)
       console.log(`   Active Gauges: ${validApys.length}`)
-      console.log(`   Average APY: ${avgApy.toFixed(2)}%`)
+      console.log(`   Average Total APY: ${avgApy.toFixed(2)}% (FXN: ${avgFxnApy.toFixed(2)}% + Extra: ${avgExtraApy.toFixed(2)}%)`)
       console.log(`   Highest APY: ${maxApy.toFixed(2)}%`)
       console.log(`   Lowest APY: ${minApy.toFixed(2)}%`)
     }

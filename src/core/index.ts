@@ -18,6 +18,7 @@ import {
   getGaugeList as getGaugeListImpl,
   getGaugeBaseInfo as getGaugeBaseInfoImpl,
   getGaugeApy as getGaugeApyImpl,
+  getConvexExtraApy as getConvexExtraApyImpl,
   getEarnPosition as getEarnPositionImpl,
   earnDeposit as earnDepositImpl,
   earnWithdraw as earnWithdrawImpl,
@@ -619,9 +620,17 @@ export class FxSdk {
   /**
    * Calculates APY for a gauge based on FXN emission, weights, and TVL.
    * @param request - Gauge info, prices, and base data
-   * @returns This week's and next week's APY as percentage strings
+   * @returns This week's and next week's APY as percentage strings, plus total APY including extra rewards
    */
   async getGaugeApy(request: GetGaugeApyRequest): Promise<GetGaugeApyResult> {
     return getGaugeApyImpl(request)
+  }
+
+  /**
+   * Fetches Convex extra reward APY for all LP pools.
+   * @returns Map of LP address (lowercase) to extra APY percentage
+   */
+  async getConvexExtraApy(): Promise<Record<string, number>> {
+    return getConvexExtraApyImpl()
   }
 }

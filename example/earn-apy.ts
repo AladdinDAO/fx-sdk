@@ -30,6 +30,7 @@
 import { FxSdk } from '../src'
 import { getClient } from '../src/core/client'
 import SharedLiquidityGaugeAbi from '../src/abis/SharedLiquidityGauge.json'
+import { getConvexExtraApy } from '../src/core/earn'
 
 // API 配置
 const LP_PRICE_API = 'https://api.aladdin.club/api1/lp/price'
@@ -81,14 +82,16 @@ async function main() {
 
   console.log('=== Earn APY Calculation Example ===\n')
 
-  // 1. Fetch real-time prices from API
-  console.log('💰 Step 1: Fetching prices from API...')
-  const [lpPrices, fxnPrice] = await Promise.all([
+  // 1. Fetch real-time prices and extra APY from API
+  console.log('💰 Step 1: Fetching prices and extra APY from API...')
+  const [lpPrices, fxnPrice, convexExtraApys] = await Promise.all([
     fetchLpPrices(),
     fetchFxnPrice(),
+    getConvexExtraApy(),
   ])
   console.log(`   ✅ Fetched ${Object.keys(lpPrices).length} LP prices`)
-  console.log(`   ✅ FXN Price: $${fxnPrice.toFixed(2)}\n`)
+  console.log(`   ✅ FXN Price: $${fxnPrice.toFixed(2)}`)
+  console.log(`   ✅ Convex Extra APY: ${Object.keys(convexExtraApys).length} pools\n`)
 
   // 2. Get list of available gauges
   console.log('🔍 Step 2: Fetching gauge list...')
@@ -134,12 +137,18 @@ async function main() {
       gaugeType: gaugeInfo.gaugeType ?? 0,
     }
 
+    // Get Convex extra APY for this pool
+    // getConvexExtraApy 返回的键都是小写，统一转换
+    const lpAddressKey = gaugeInfo.lpAddress.toLowerCase()
+    const convexExtraApy = convexExtraApys[lpAddressKey] ?? 0
+
     // Calculate APY
     const apyResult = await sdk.getGaugeApy({
       gaugeInfo: gaugeWithSupply,
       lpPrice,
       fxnPrice,
       baseInfo,
+      convexExtraApy,
     })
 
     // Calculate TVL
@@ -155,14 +164,16 @@ async function main() {
     console.log(`   Gauge Weight:   ${gaugeInfo.gauge_weight?.toString() || 'N/A'}`)
     console.log(`   This Week W:    ${gaugeInfo.this_week_gauge_weight?.toString() || 'N/A'}`)
     console.log(`   Next Week W:    ${gaugeInfo.next_week_gauge_weight?.toString() || 'N/A'}`)
-    console.log(`   This Week APY:  ${apyResult.thisWeekApy}%`)
-    console.log(`   Next Week APY:  ${apyResult.nextWeekApy}%`)
+    console.log(`   FXN APY:        ${apyResult.thisWeekApy}%`)
+    console.log(`   Extra APY:      ${apyResult.extraApy || '0.00'}%`)
+    console.log(`   Total APY:      ${apyResult.totalApy}%`)
     console.log('')
   }
 
   console.log('=== Example Complete ===')
   console.log('')
-  console.log('📝 Note: These are base APY values without veFXN boost adjustments.')
+  console.log('📝 Note: Total APY = FXN APY + Extra APY (Convex rewards)')
+  console.log('   These are base APY values without veFXN boost adjustments.')
   console.log('   For actual user APY, apply repairBoost and votingBoost in your application layer.')
 }
 

@@ -33,6 +33,133 @@ const SECONDS_PER_YEAR = BigInt(365 * 24 * 60 * 60)
 const PRECISION = 1000000000000000000n // 1e18 in BigInt
 
 const GAUGE_LIST_API = 'https://api.aladdin.club/api1/get_fx_gauge_list'
+const CONVEX_API = 'https://api.aladdin.club/api1/lp/convex'
+
+/**
+ * Fetch the set of LP addresses that are direct gauges (no CRV/CVX rewards).
+ * Returns a Set of lowercase LP addresses.
+ */
+export async function getDirectGaugeSet(): Promise<Set<string>> {
+  try {
+    const response = await axios.get(GAUGE_LIST_API, { timeout: 10000 })
+    const data = response.data?.data
+    if (!data) {
+      return new Set()
+    }
+
+    const directGauges = new Set<string>()
+    for (const gauge of Object.values(data)) {
+      if ((gauge as any).isDirectGaugeStakeOnly === true && (gauge as any).lpAddress) {
+        directGauges.add((gauge as any).lpAddress.toLowerCase())
+      }
+    }
+    return directGauges
+  } catch (error) {
+    console.warn('⚠️  Failed to fetch direct gauge set:', error instanceof Error ? error.message : error)
+    return new Set()
+  }
+}
+
+/**
+ * Fetch Convex extra reward APY for all LP pools.
+ * Returns a map of LP address (lowercase) to extra APY percentage.
+ *
+ * Note:
+ * - For direct gauges (isDirectGaugeStakeOnly): only baseApy
+ * - For normal gauges: baseApy + crvApy1 + cvxApy
+ * - Uses currentApys to check if rewards are currently being distributed
+ */
+export async function getConvexExtraApy(): Promise<Record<string, number>> {
+  try {
+    // 获取直接 gauge 集合（用于判断哪些池子没有 CRV/CVX 奖励）
+    const directGaugeSet = await getDirectGaugeSet()
+
+    const response = await axios.get(CONVEX_API, { timeout: 10000 })
+    const data = response.data?.data
+
+    // 验证数据格式
+    if (!Array.isArray(data)) {
+      console.warn('⚠️  Convex API returned non-array data')
+      return {}
+    }
+
+    const convexApys: Record<string, number> = {}
+    for (const pool of data) {
+      // 验证 pool 对象存在
+      if (!pool || typeof pool !== 'object') continue
+
+      // 验证必需字段
+      const address = pool.address
+      if (!address || typeof address !== 'string') continue
+
+      // 验证地址格式
+      if (!/^0x[0-9a-fA-F]{40}$/.test(address)) {
+        console.warn(`⚠️  Invalid LP address format: ${address}`)
+        continue
+      }
+
+      // 检查是否为直接 gauge（没有 CRV/CVX 奖励）
+      const isDirectGauge = directGaugeSet.has(address.toLowerCase())
+
+      const currentApys = pool.currentApys
+      const curveApys = pool.curveApys
+
+      let extraApy = 0
+
+      if (isDirectGauge) {
+        // 直接 gauge：只有 baseApy（交易费等基础收益），没有 CRV/CVX
+        if (curveApys && typeof curveApys === 'object') {
+          const baseApy = Number(curveApys.baseApy || 0)
+          if (isNaN(baseApy) || !isFinite(baseApy)) {
+            continue
+          }
+          extraApy = baseApy
+        }
+      } else {
+        // 普通 gauge：baseApy + crvApy + cvxApy
+        if (currentApys && typeof currentApys === 'object') {
+          const baseApy = Number(currentApys.baseApy || 0)
+          let crvApy = Number(currentApys.crvApy || 0)
+          let cvxApy = Number(currentApys.cvxApy || 0)
+
+          // 如果 currentApys 中的值是 0 或 NaN，说明当前没有发放 CRV/CVX
+          if (crvApy === 0 || isNaN(crvApy) || cvxApy === 0 || isNaN(cvxApy)) {
+            // 当前没有发放，只显示 baseApy
+            extraApy = baseApy
+          } else {
+            // 当前有发放，使用完整的 APY
+            extraApy = baseApy + crvApy + cvxApy
+          }
+        } else if (curveApys && typeof curveApys === 'object') {
+          // fallback 到 curveApys
+          const baseApy = Number(curveApys.baseApy || 0)
+          extraApy = baseApy
+        }
+      }
+
+      // 验证 APY 值有效性
+      if (isNaN(extraApy) || !isFinite(extraApy)) {
+        console.warn(`⚠️  Invalid APY value for ${address}`)
+        continue
+      }
+
+      // 过滤异常值（负数或过大）
+      if (extraApy < 0 || extraApy > 1000) {
+        console.warn(`⚠️  APY out of reasonable range for ${address}: ${extraApy}%`)
+        continue
+      }
+
+      // 只保存有 APY 的池子
+      if (extraApy > 0) {
+        convexApys[address.toLowerCase()] = extraApy
+      }
+    }
+    return convexApys
+  } catch (error) {
+    console.warn('⚠️  Failed to fetch Convex APY:', error instanceof Error ? error.message : error)
+    return {}
+  }
+}
 
 export async function getGaugeList(): Promise<GetGaugeListResult> {
   const response = await axios.get(GAUGE_LIST_API, { timeout: 10000 })
@@ -370,16 +497,19 @@ export async function getGaugeBaseInfo(
  * // Base APY (without boost)
  * baseApy = (rewards * fxnPrice * weeksPerYear) / (totalSupply * lpPrice) * 100
  *
+ * // Total APY = FXN APY + Extra APY (Convex)
+ * totalApy = thisWeekApy + convexExtraApy
+ *
  * // Application layer should adjust:
  * minDisplayApy = baseApy * repairBoost           // Current boost level
  * maxDisplayApy = baseApy * repairBoost * 2.5     // Max boost (2.5x)
  * ```
  *
  * @param request - APY calculation parameters
- * @returns Base APY for this week and next week (unadjusted)
+ * @returns Base APY for this week and next week, plus total APY including extra rewards
  */
 export function getGaugeApy(request: GetGaugeApyRequest): GetGaugeApyResult {
-  const { gaugeInfo, lpPrice, fxnPrice, baseInfo } = request
+  const { gaugeInfo, lpPrice, fxnPrice, baseInfo, convexExtraApy } = request
 
   // Validate gaugeType is within bounds
   const gaugeType = gaugeInfo.gaugeType ?? 0
@@ -411,9 +541,9 @@ export function getGaugeApy(request: GetGaugeApyRequest): GetGaugeApyResult {
   const totalSupplyFloat = Number(totalSupply) / Number(PRECISION)
   const tvlInUsd = totalSupplyFloat * lpPrice
 
-  // Calculate APY as percentage
-  let thisWeekApy = '0'
-  let nextWeekApy = '0'
+  // Calculate APY as percentage (keep as number to preserve precision)
+  let thisWeekApyValue = 0
+  let nextWeekApyValue = 0
 
   if (tvlInUsd > 0 && fxnPrice > 0) {
     const thisWeekRewardsFloat = Number(thisWeekRewards) / Number(PRECISION)
@@ -421,12 +551,25 @@ export function getGaugeApy(request: GetGaugeApyRequest): GetGaugeApyResult {
 
     const weeksPerYear = Number(SECONDS_PER_YEAR) / Number(SECONDS_PER_WEEK)
 
-    thisWeekApy = ((thisWeekRewardsFloat * fxnPrice * weeksPerYear) / tvlInUsd * 100).toFixed(2)
-    nextWeekApy = ((nextWeekRewardsFloat * fxnPrice * weeksPerYear) / tvlInUsd * 100).toFixed(2)
+    thisWeekApyValue = (thisWeekRewardsFloat * fxnPrice * weeksPerYear) / tvlInUsd * 100
+    nextWeekApyValue = (nextWeekRewardsFloat * fxnPrice * weeksPerYear) / tvlInUsd * 100
   }
+
+  // Add convex extra APY (using number arithmetic to avoid precision issues)
+  const extraApyValue = convexExtraApy ?? 0
+  const totalApyValue = thisWeekApyValue + extraApyValue
+
+  // Convert to string only at the end (final step)
+  const thisWeekApy = thisWeekApyValue.toFixed(2)
+  const nextWeekApy = nextWeekApyValue.toFixed(2)
+  // 只有当 convexExtraApy 明确传入时才显示 extraApy（包括 0）
+  const extraApy = convexExtraApy !== undefined ? extraApyValue.toFixed(2) : undefined
+  const totalApy = totalApyValue.toFixed(2)
 
   return {
     thisWeekApy,
     nextWeekApy,
+    extraApy,
+    totalApy,
   }
 }

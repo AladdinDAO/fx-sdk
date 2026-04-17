@@ -147,12 +147,18 @@ export interface GetGaugeApyRequest {
   fxnPrice: number
   /** Gauge base information (weights, rates). */
   baseInfo: GaugeBaseInfo
+  /** Optional: Extra reward APY from Convex (percentage). */
+  convexExtraApy?: number
 }
 
 /** Result of getGaugeApy. */
 export interface GetGaugeApyResult {
-  /** This week's APY as percentage string. */
+  /** This week's FXN APY as percentage string. */
   thisWeekApy: string
-  /** Next week's APY as percentage string. */
+  /** Next week's FXN APY as percentage string. */
   nextWeekApy: string
+  /** Extra reward APY from Convex (percentage). */
+  extraApy?: string
+  /** Total APY = FXN APY + Extra APY. */
+  totalApy: string
 }
