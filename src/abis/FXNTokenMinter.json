@@ -1,0 +1,167 @@
+[
+  {
+    "name": "Minted",
+    "inputs": [
+      {
+        "name": "recipient",
+        "type": "address",
+        "indexed": true
+      },
+      {
+        "name": "gauge",
+        "type": "address",
+        "indexed": false
+      },
+      {
+        "name": "minted",
+        "type": "uint256",
+        "indexed": false
+      }
+    ],
+    "anonymous": false,
+    "type": "event"
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "initialize",
+    "inputs": [
+      {
+        "name": "_token",
+        "type": "address"
+      },
+      {
+        "name": "_controller",
+        "type": "address"
+      }
+    ],
+    "outputs": [],
+    "gas": 76092
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "mint",
+    "inputs": [
+      {
+        "name": "gauge_addr",
+        "type": "address"
+      }
+    ],
+    "outputs": [],
+    "gas": 112502
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "mint_many",
+    "inputs": [
+      {
+        "name": "gauge_addrs",
+        "type": "address[8]"
+      }
+    ],
+    "outputs": [],
+    "gas": 499362
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "mint_for",
+    "inputs": [
+      {
+        "name": "gauge_addr",
+        "type": "address"
+      },
+      {
+        "name": "_for",
+        "type": "address"
+      }
+    ],
+    "outputs": [],
+    "gas": 115095
+  },
+  {
+    "stateMutability": "nonpayable",
+    "type": "function",
+    "name": "toggle_approve_mint",
+    "inputs": [
+      {
+        "name": "minting_user",
+        "type": "address"
+      }
+    ],
+    "outputs": [],
+    "gas": 38081
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "token",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "gas": 2610
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "controller",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "gas": 2640
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "minted",
+    "inputs": [
+      {
+        "name": "arg0",
+        "type": "address"
+      },
+      {
+        "name": "arg1",
+        "type": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "gas": 3202
+  },
+  {
+    "stateMutability": "view",
+    "type": "function",
+    "name": "allowed_to_mint_for",
+    "inputs": [
+      {
+        "name": "arg0",
+        "type": "address"
+      },
+      {
+        "name": "arg1",
+        "type": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "gas": 3232
+  }
+]
