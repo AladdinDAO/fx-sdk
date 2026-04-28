@@ -114,7 +114,8 @@ export class Pool {
         repayFeeRatio: fxMintPoolFeeRatioRes[3],
       }
     } catch (error) {
-      throw new Error('Failed to fetch pool data')
+      const msg = error instanceof Error ? error.message : String(error)
+      throw new Error(`Failed to fetch pool data: ${msg}`, { cause: error })
     }
   }
 
@@ -139,8 +140,6 @@ export class Pool {
       .toString()
     const averagePrice = cBN(buyPrice).add(cBN(sellPrice)).div(2).toString()
 
-    console.log('poolData-->', poolData)
-
     const poolInfo = {
       ...this.config,
       ...poolData,
@@ -163,8 +162,6 @@ export class Pool {
         .div(1e9)
         .toNumber(),
     }
-
-    console.log('poolInfo-->', poolInfo)
 
     return poolInfo
   }
