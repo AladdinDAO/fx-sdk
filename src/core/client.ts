@@ -1,9 +1,37 @@
-import { PublicClient, createPublicClient, http } from 'viem'
+import { Chain, createPublicClient, http, type PublicClient } from 'viem'
+import { base, mainnet } from 'viem/chains'
 import { RPC_URL, CHAIN_ID } from '@/configs'
+import { DEFAULT_RPC_BY_CHAIN } from '@/configs/layerzero'
+
+/** Multicall3 on unknown chains (same canonical deployment as Ethereum). */
+const DEFAULT_MULTICALL3 = {
+  address: '0xcA11bde05977b3631167028862bE2a173976CA11' as const,
+  blockCreated: 14353601,
+} as const
+
+function buildChain(chainId: number, rpcUrl: string): Chain {
+  const rpc = { default: { http: [rpcUrl] } }
+  if (chainId === mainnet.id) {
+    return { ...mainnet, rpcUrls: rpc }
+  }
+  if (chainId === base.id) {
+    return { ...base, rpcUrls: rpc }
+  }
+  return {
+    id: chainId,
+    name: `chain-${chainId}`,
+    nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+    rpcUrls: rpc,
+    contracts: { multicall3: DEFAULT_MULTICALL3 },
+  }
+}
 
 export class RpcClient {
   private static instance: RpcClient
-  private client: PublicClient | null = null
+  /** Most recent explicit config (from FxSdk constructor or getClient(chainId?, rpcUrl?)). */
+  private activeChainId = CHAIN_ID
+  private activeRpcUrl = RPC_URL
+  private clients = new Map<string, PublicClient>()
 
   private constructor() {}
 
@@ -14,43 +42,38 @@ export class RpcClient {
     return RpcClient.instance
   }
 
+  private cacheKey(chainId: number, rpcUrl: string) {
+    return `${chainId}:${rpcUrl}`
+  }
+
   /**
-   * Gets or creates the RPC client instance (singleton).
-   * @param chainId - Chain ID (defaults to configured value)
-   * @param rpcUrl - RPC URL (defaults to configured value)
-   * @returns viem PublicClient instance
+   * Gets or creates a cached PublicClient for the active (or requested) chain and RPC.
+   * The last FxSdk(config) or getClient(chainId, rpcUrl) sets which client bare getClient() uses.
    */
   getClient(chainId?: number, rpcUrl?: string): PublicClient {
-    if (this.client) {
-      return this.client
+    if (chainId !== undefined) {
+      this.activeChainId = chainId
+    }
+    if (rpcUrl !== undefined) {
+      this.activeRpcUrl = rpcUrl
+    } else if (chainId !== undefined) {
+      this.activeRpcUrl = DEFAULT_RPC_BY_CHAIN[chainId] ?? RPC_URL
     }
 
-    this.client = createPublicClient({
-      batch: {
-        multicall: true,
-      },
-      chain: {
-        id: chainId ?? CHAIN_ID,
-        name: 'Ethereum',
-        nativeCurrency: {
-          name: 'Ether',
-          symbol: 'ETH',
-          decimals: 18,
-        },
-        rpcUrls: {
-          default: { http: [rpcUrl ?? RPC_URL] },
-        },
-        contracts: {
-          multicall3: {
-            address: '0xcA11bde05977b3631167028862bE2a173976CA11',
-            blockCreated: 14353601,
-          },
-        },
-      },
+    const key = this.cacheKey(this.activeChainId, this.activeRpcUrl)
+    let client = this.clients.get(key)
+    if (client) {
+      return client
+    }
+
+    const chain = buildChain(this.activeChainId, this.activeRpcUrl)
+    client = createPublicClient({
+      chain,
+      batch: { multicall: true },
       transport: http(),
     })
-
-    return this.client
+    this.clients.set(key, client)
+    return client
   }
 
   /**
