@@ -124,7 +124,7 @@
     },
     {
       "name": "depositAndMint",
-      "description": "Deposit collateral and mint fxUSD. Long only.",
+      "description": "Deposit collateral and mint fxUSD (fxMINT). Long only. Returns txs plus preview metrics (ltv → newLtv, fee, leverage, isZapIn, minOut).",
       "parameters": {
         "type": "object",
         "properties": {
@@ -140,7 +140,7 @@
     },
     {
       "name": "repayAndWithdraw",
-      "description": "Repay fxUSD and withdraw collateral. Long only.",
+      "description": "Repay fxUSD and withdraw collateral (fxMINT). Long only. Returns txs plus preview metrics (ltv → newLtv, fee, payAmount, isClose, isZapOut, minOut).",
       "parameters": {
         "type": "object",
         "properties": {
@@ -152,6 +152,36 @@
           "withdrawTokenAddress": { "$ref": "#/definitions/tokenAddress" }
         },
         "required": ["market", "positionId", "userAddress", "repayAmountWei", "withdrawAmountWei", "withdrawTokenAddress"]
+      }
+    },
+    {
+      "name": "getFxMintMintableRange",
+      "description": "Read-only. Preview the [minMint, maxMint] fxUSD range allowed by the pool for a given (positionId, depositToken, depositAmount). Use to bound mintAmount before calling depositAndMint. Long only.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "market": { "$ref": "#/definitions/market" },
+          "positionId": { "type": "integer", "minimum": 0 },
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "depositTokenAddress": { "$ref": "#/definitions/tokenAddress" },
+          "depositAmountWei": { "$ref": "#/definitions/amountWei" }
+        },
+        "required": ["market", "positionId", "userAddress", "depositTokenAddress", "depositAmountWei"]
+      }
+    },
+    {
+      "name": "getFxMintWithdrawableRange",
+      "description": "Read-only. Preview the [minWithdraw, maxWithdraw] collateral range for a given repayAmount, plus isClose (true when rawDebts - repayAmount <= 0). Use to bound withdrawAmount before calling repayAndWithdraw. Long only.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "market": { "$ref": "#/definitions/market" },
+          "positionId": { "type": "integer", "minimum": 1 },
+          "userAddress": { "$ref": "#/definitions/userAddress" },
+          "repayAmountWei": { "$ref": "#/definitions/amountWei" },
+          "withdrawTokenAddress": { "$ref": "#/definitions/tokenAddress" }
+        },
+        "required": ["market", "positionId", "userAddress", "repayAmountWei", "withdrawTokenAddress"]
       }
     },
     {

@@ -1,7 +1,7 @@
 ---
 name: fx-sdk-agent
-version: 1.0.1
-description: Use FX Protocol TypeScript SDK (fx-sdk) to query positions (getPositions returns PositionInfo[] with rawColls, rawDebts, rawCollsToken, rawDebtsToken, decimals), build leverage operation transaction plans, bridge tokens between Base and Ethereum (LayerZero), and fxSAVE (config/totals, balance, redeem status, claimable preview, deposit, withdraw, claim). Generate runnable scripts for increasePosition, reducePosition, adjustPositionLeverage, depositAndMint, repayAndWithdraw, getBridgeQuote, buildBridgeTx, getFxSaveConfig, getFxSaveBalance, getFxSaveRedeemStatus, getFxSaveClaimable, getRedeemTx, depositFxSave, withdrawFxSave. Use when users ask to integrate this SDK into an agent/tool, produce transaction execution code, troubleshoot SDK parameters, or validate FX trading workflows on Ethereum mainnet or Base.
+version: 1.0.2
+description: Use FX Protocol TypeScript SDK (fx-sdk) to query positions (getPositions returns PositionInfo[] with rawColls, rawDebts, rawCollsToken, rawDebtsToken, decimals), build leverage operation transaction plans, build fxMINT deposit-and-mint / repay-and-withdraw with preview metrics and mintable/withdrawable range guards, bridge tokens between Base and Ethereum (LayerZero), and fxSAVE (config/totals, balance, redeem status, claimable preview, deposit, withdraw, claim). Generate runnable scripts for increasePosition, reducePosition, adjustPositionLeverage, depositAndMint, repayAndWithdraw, getFxMintMintableRange, getFxMintWithdrawableRange, getBridgeQuote, buildBridgeTx, getFxSaveConfig, getFxSaveBalance, getFxSaveRedeemStatus, getFxSaveClaimable, getRedeemTx, depositFxSave, withdrawFxSave. Use when users ask to integrate this SDK into an agent/tool, produce transaction execution code, troubleshoot SDK parameters, or validate FX trading workflows on Ethereum mainnet or Base.
 ---
 
 # FX SDK Agent Skill
@@ -10,7 +10,7 @@ Use this skill to produce reliable `fx-sdk` integrations for agent workflows.
 
 ## Follow This Workflow
 
-1. Confirm user intent: read-only query (`getPositions`, `getFxSaveConfig`, `getFxSaveBalance`, `getFxSaveRedeemStatus`, `getFxSaveClaimable`), transaction-producing action (`increase/reduce/adjust/deposit/repay`, fxSAVE `depositFxSave`/`withdrawFxSave`/`getRedeemTx`), or Base–Ethereum bridge (`getBridgeQuote` / `buildBridgeTx`).
+1. Confirm user intent: read-only query (`getPositions`, `getFxMintMintableRange`, `getFxMintWithdrawableRange`, `getFxSaveConfig`, `getFxSaveBalance`, `getFxSaveRedeemStatus`, `getFxSaveClaimable`), transaction-producing action (`increase/reduce/adjust/deposit/repay`, fxSAVE `depositFxSave`/`withdrawFxSave`/`getRedeemTx`), or Base–Ethereum bridge (`getBridgeQuote` / `buildBridgeTx`).
 2. Collect required inputs before coding:
 - `market`: `ETH` or `BTC`
 - position type when needed: `long` or `short`
@@ -56,8 +56,10 @@ const sdk = new FxSdk({ rpcUrl, chainId: 1 })
 - `sdk.increasePosition(...)`: open new position (`positionId: 0`) or add collateral/leverage.
 - `sdk.reducePosition(...)`: reduce or close (`isClosePosition: true`).
 - `sdk.adjustPositionLeverage(...)`: rebalance leverage for existing position.
-- `sdk.depositAndMint(...)`: long pool only.
-- `sdk.repayAndWithdraw(...)`: long pool only.
+- `sdk.depositAndMint(...)`: fxMINT deposit + mint (long pool only). Returns `txs` plus preview metrics (`ltv → newLtv`, `fee`, `feeRatio`, `leverage`, `executionPrice`, `isZapIn`, `minOut`).
+- `sdk.repayAndWithdraw(...)`: fxMINT repay + withdraw (long pool only). Returns `txs` plus preview metrics (`ltv → newLtv`, `fee`, `feeRatio`, `payAmount` = `repayAmount * (1 + repayFeeRatio)`, `isClose`, `isZapOut`, `minOut`).
+- `sdk.getFxMintMintableRange(...)`: read-only. Returns `{ minMint, maxMint }` (bigint wei). Use to bound `mintAmount` before `depositAndMint`. Long pool only.
+- `sdk.getFxMintWithdrawableRange(...)`: read-only. Returns `{ minWithdraw, maxWithdraw, isClose }`. Use to bound `withdrawAmount` before `repayAndWithdraw`. Long pool only.
 - `sdk.getBridgeQuote(...)`: fee quote for LayerZero V2 OFT bridge (Base <-> Ethereum). Use source chain RPC.
 - `sdk.buildBridgeTx(...)`: build tx payload (to, data, value) to send on source chain; then send with wallet (same pattern as position txs). **When Ethereum is source chain, user must approve `tx.to` (RootEndPointV2) to spend the token before sending the bridge tx.**
 
@@ -96,6 +98,22 @@ Honor SDK token checks:
   - `fxUSDBasePool` → direct redeem; `usdc`/`fxUSD` → requestRedeem (cooldown) or instant (fee + slippage)  
   - Amounts in wei (18 decimals for fxSAVE shares; 6 for USDC)
 
+## fxMINT Workflow
+
+For `depositAndMint` / `repayAndWithdraw`:
+
+1. **Bound the input** — call `getFxMintMintableRange` (deposit) or `getFxMintWithdrawableRange` (repay) first; the pool will revert if `mintAmount` / `withdrawAmount` falls outside `[min, max]`.
+2. **Build with preview** — `depositAndMint` / `repayAndWithdraw` return both `txs` and preview metrics on the same response. Render the preview (`ltv → newLtv`, `fee`, `payAmount`, `isClose`) to the user before broadcasting.
+3. **Send txs in nonce order** — same pattern as leverage trades.
+
+Fee semantics:
+- `feeRatio` is a fraction in `[0, 1]` (e.g. `0.0005` = 5 bps).
+- `fee` is the absolute fxUSD-wei fee.
+- `payAmount` for repay already includes the fee — wallet must hold at least `payAmount` fxUSD.
+
+Display-only state caveat:
+- The SDK exposes `borrowFeeRatio` / `repayFeeRatio` on `PoolInfo` (used to compute `fee` in the preview). It does **not** surface borrow APY, funding rates, liquidate ratio, the liquidation-brake price, or the `isBorrowAllowed` / `isBorrowPaused` / `isStableRepayAllowed` flags. If an agent needs to render those, fetch them from the on-chain contracts directly or from your indexer.
+
 ## Common Errors
 
 - `"Input amount must be greater than 0"` / `"Amount to reduce must be greater than 0"` → amount must be positive bigint.
@@ -133,8 +151,9 @@ Read these files when examples are required:
 - `example/increase-position.ts`
 - `example/reduce-position.ts`
 - `example/adjust-position-leverage.ts`
-- `example/deposit-and-mint.ts`
-- `example/repay-and-withdraw.ts`
+- `example/deposit-and-mint.ts` (fxMINT — range guard + deposit-and-mint preview + execute)
+- `example/repay-and-withdraw.ts` (fxMINT — range guard + repay-and-withdraw preview + execute)
+- `example/fxmint-overview.ts` (read-only fxMINT replay: pool core fields + positions + ranges)
 - `example/get-positions.ts`
 - `example/layerzero-bridge.ts`
 - `example/get-fxsave-balance.ts`

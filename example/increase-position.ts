@@ -69,14 +69,14 @@ async function increasePosition() {
     // Example: Open a new position or add to existing position
     const result = await sdk.increasePosition({
       market: 'ETH', // 'ETH' or 'BTC'
-      type: 'short',  // 'long' or 'short'
+      type: 'long',  // 'long' or 'short'
       positionId: 0, // 0 means open new position, > 0 means existing position ID
-      leverage: 6,   // Leverage multiplier
-      inputTokenAddress: tokens.wstETH, // Input token address
+      leverage: 2,   // Leverage multiplier
+      inputTokenAddress: tokens.eth, // Input token address
       amount: parseEther('1'), // Input amount (1 ETH)
       slippage: 1,   // Slippage tolerance (1%)
       userAddress,
-      targets: [ROUTE_TYPES.FX_ROUTE],
+      // targets: [ROUTE_TYPES.FX_ROUTE],
     })
 
     console.log(`Found ${result.routes.length} route options`)

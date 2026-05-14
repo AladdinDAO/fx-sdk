@@ -71,22 +71,47 @@ async function depositAndMint() {
     // Replace with your actual position ID (0 for new position)
     const positionId = process.env.POSITION_ID ? parseInt(process.env.POSITION_ID) : 0
 
-    const result = await sdk.depositAndMint({
-      market: 'BTC', // 'ETH' or 'BTC' (only supports long positions)
+    const market: 'ETH' | 'BTC' = 'BTC'
+    const depositTokenAddress = tokens.WBTC
+    const depositAmount = BigInt(1e8) // 1 WBTC
+    const mintAmount = parseEther('20000') // 20,000 fxUSD
+
+    // 1) Preview mintable range (parity with Mintable cap on the fxMINT page)
+    const range = await sdk.getFxMintMintableRange({
+      market,
       positionId,
-      depositTokenAddress: tokens.WBTC, // Deposit token address (stETH, weth, or wstETH for ETH; WBTC for BTC)
-      depositAmount: 1e8, // parseEther('1'), // Deposit amount (1 ETH)
-      mintAmount: parseEther('20000'), // Amount of fxUSD to mint (2000 fxUSD)
+      userAddress,
+      depositTokenAddress,
+      depositAmount,
+    })
+    console.log('\nMintable range (fxUSD wei):')
+    console.log(`  min: ${range.minMint.toString()}`)
+    console.log(`  max: ${range.maxMint.toString()}`)
+
+    if (mintAmount > range.maxMint || mintAmount < range.minMint) {
+      console.warn(`  ⚠️ mintAmount ${mintAmount} outside [${range.minMint}, ${range.maxMint}] — SDK call may revert.`)
+    }
+
+    // 2) Build transactions + preview metrics (LTV / leverage / fee)
+    const result = await sdk.depositAndMint({
+      market,
+      positionId,
+      depositTokenAddress,
+      depositAmount,
+      mintAmount,
       userAddress,
       targets: [ROUTE_TYPES.FX_ROUTE],
     })
 
-    console.log('\nTransaction Details:')
+    console.log('\nPreview:')
     console.log(`  Position ID: ${result.positionId}`)
     console.log(`  Leverage: ${result.leverage.toFixed(2)}x`)
     console.log(`  Execution Price: ${result.executionPrice}`)
+    console.log(`  LTV: ${(result.ltv * 100).toFixed(2)}% → ${(result.newLtv * 100).toFixed(2)}%`)
+    console.log(`  Fee: ${result.fee.toString()} fxUSD wei (rate ${(result.feeRatio * 100).toFixed(4)}%)`)
     console.log(`  Collateral: ${result.colls.toString()}`)
     console.log(`  Debt: ${result.debts.toString()}`)
+    console.log(`  isZapIn: ${result.isZapIn}, minOut: ${result.minOut.toString()}`)
     console.log(`  Transactions: ${result.txs.length}`)
 
     if (result.txs.length === 0) {

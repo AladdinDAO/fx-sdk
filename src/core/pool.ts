@@ -42,8 +42,9 @@ export class Pool {
   }
 
   /**
-   * Fetches pool data from the blockchain.
-   * @returns Object containing pool capacity, balances, fee ratios, and pause status
+   * Fetches the on-chain numbers needed for both leverage trading and fxMINT
+   * core ops: capacities, debt-ratio range, paused flag, and both fee tuples
+   * (Router_Diamond for leverage trading, FxMintRouter for fxMINT).
    */
   async getPoolData() {
     const calls = [
@@ -92,9 +93,9 @@ export class Pool {
         { result: boolean },
         { result: [bigint, bigint] },
         { result: [bigint, bigint, bigint, bigint] },
-        { result: [bigint, bigint, bigint, bigint] }
+        { result: [bigint, bigint, bigint, bigint] },
       ]
-      
+
       const { isShort } = this.config
 
       return {
@@ -111,7 +112,8 @@ export class Pool {
 
         supplyFeeRatio: poolFeeRatioRes[0],
         withdrawFeeRatio: poolFeeRatioRes[1],
-        repayFeeRatio: fxMintPoolFeeRatioRes[3],
+        borrowFeeRatioRaw: fxMintPoolFeeRatioRes[2],
+        repayFeeRatioRaw: fxMintPoolFeeRatioRes[3],
       }
     } catch (error) {
       throw new Error('Failed to fetch pool data')
@@ -119,8 +121,9 @@ export class Pool {
   }
 
   /**
-   * Gets comprehensive pool information including price data.
-   * @returns Pool information object with all pool details
+   * Gets pool information needed by both leverage trading and fxMINT core ops:
+   * capacities, debt-ratio range, fee ratios (including `borrowFeeRatio` /
+   * `repayFeeRatio` used by fxMINT), and price data.
    */
   async getPoolInfo(): Promise<PoolInfo> {
     const { isShort } = this.config
@@ -139,12 +142,19 @@ export class Pool {
       .toString()
     const averagePrice = cBN(buyPrice).add(cBN(sellPrice)).div(2).toString()
 
-    console.log('poolData-->', poolData)
-
-    const poolInfo = {
+    const poolInfo: PoolInfo = {
       ...this.config,
-      ...poolData,
+
+      collateralCapacity: poolData.collateralCapacity,
+      collateralBalance: poolData.collateralBalance,
+      rawCollateral: poolData.rawCollateral,
+      debtCapacity: poolData.debtCapacity,
+      debtBalance: poolData.debtBalance,
+
+      isPaused: poolData.isPaused,
+
       ...oraclePrice,
+
       collRest: poolData.collateralCapacity - poolData.collateralBalance,
       debtRest: poolData.debtCapacity - poolData.debtBalance,
       rateRes,
@@ -153,18 +163,22 @@ export class Pool {
       openPrice: isShort ? sellPrice : buyPrice,
       closePrice: isShort ? buyPrice : sellPrice,
 
+      poolMinDebtRatio: poolData.poolMinDebtRatio,
+      poolMaxDebtRatio: poolData.poolMaxDebtRatio,
+
       openFeeRatio: cBN(poolData.supplyFeeRatio ?? 0)
         .div(1e9)
         .toNumber(),
       closeFeeRatio: cBN(poolData.withdrawFeeRatio ?? 0)
         .div(1e9)
         .toNumber(),
-      repayFeeRatio: cBN(poolData.repayFeeRatio ?? 0)
+      borrowFeeRatio: cBN(poolData.borrowFeeRatioRaw ?? 0)
+        .div(1e9)
+        .toNumber(),
+      repayFeeRatio: cBN(poolData.repayFeeRatioRaw ?? 0)
         .div(1e9)
         .toNumber(),
     }
-
-    console.log('poolInfo-->', poolInfo)
 
     return poolInfo
   }

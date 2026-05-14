@@ -2,6 +2,7 @@ import { getClient } from '@/core/client'
 import { isAddress } from 'viem'
 import { Position } from '@/core/position'
 import { Pool } from '@/core/pool'
+import { FxMint } from '@/core/fxmint'
 import { AdjustPositionLeverageRequest, IncreasePositionRequest, ReducePositionRequest, DepositAndMintRequest, RepayAndWithdrawRequest, Market, PositionType, BridgeQuoteRequest, BridgeQuoteResult, BuildBridgeTxRequest, BuildBridgeTxResult, GetFxSaveBalanceRequest, GetFxSaveBalanceResult, GetFxSaveConfigRequest, GetFxSaveConfigResult, GetFxSaveRedeemStatusRequest, GetFxSaveRedeemStatusResult, GetFxSaveClaimableRequest, GetFxSaveClaimableResult, GetRedeemTxRequest, GetRedeemTxResult, FxSaveDepositRequest, FxSaveDepositResult, FxSaveWithdrawRequest, FxSaveWithdrawResult } from '@/types'
 import { getBridgeQuote as getBridgeQuoteImpl, buildBridgeTx as buildBridgeTxImpl } from '@/bridge'
 import {
@@ -300,15 +301,23 @@ export class FxSdk {
   }
 
   /**
-   * Deposits collateral into a position and mints fxUSD. Long positions only.
+   * fxMINT: deposit collateral into a long position and mint fxUSD. Returns
+   * the txs to execute plus preview metrics for the UI (ltv → newLtv, fee,
+   * leverage, zap flag, minOut).
+   *
+   * Long positions only. Before calling, consider bounding `mintAmount` with
+   * {@link getFxMintMintableRange} — the pool will revert otherwise.
+   *
    * @param request - Request parameters
    * @param request.market - Market: 'ETH' or 'BTC'
-   * @param request.positionId - Position ID (0 = new, > 0 = existing)
+   * @param request.positionId - Position ID (0 = new, > 0 = existing owned by user)
    * @param request.userAddress - User's wallet address
    * @param request.depositTokenAddress - Deposit token contract address
    * @param request.depositAmount - Collateral amount in wei (bigint)
    * @param request.mintAmount - fxUSD amount to mint in wei (bigint)
-   * @returns Object with transaction array (execute in order)
+   * @returns Object with `txs` (execute in nonce order) plus preview fields
+   *   `ltv`, `newLtv`, `fee`, `feeRatio`, `leverage`, `executionPrice`,
+   *   `colls`, `debts`, `isZapIn`, `minOut`.
    */
   async depositAndMint(request: DepositAndMintRequest) {
     const {
@@ -363,28 +372,41 @@ export class FxSdk {
 
     const poolInfo = await pool.getPoolInfo()
 
-    const position = new Position({
+    const fxMint = new FxMint({
       positionId,
       poolInfo,
       userAddress,
     })
 
-    return position.depositAndMint({
+    return fxMint.depositAndMint({
       ...request,
       depositTokenAddress: depositTokenAddress.toLowerCase(),
     })
   }
 
   /**
-   * Repays debt and withdraws collateral from a position. Long positions only.
+   * fxMINT: repay fxUSD debt and withdraw collateral from a long position.
+   * Returns the txs to execute plus preview metrics for the UI (ltv → newLtv,
+   * fee, payAmount, isClose, zap flag, minOut).
+   *
+   * Long positions only. Before calling, consider bounding `withdrawAmount`
+   * with {@link getFxMintWithdrawableRange}. When the supplied `repayAmount`
+   * is ≥ `rawDebts`, the SDK forces a full close (`isClose: true`) and
+   * surrenders all collateral.
+   *
+   * The wallet must hold at least `result.payAmount` fxUSD —
+   * `payAmount = repayAmount * (1 + repayFeeRatio)` includes the fee.
+   *
    * @param request - Request parameters
    * @param request.market - Market: 'ETH' or 'BTC'
-   * @param request.positionId - Existing position ID (must be > 0)
+   * @param request.positionId - Existing position ID (must be > 0 and owned by user)
    * @param request.userAddress - User's wallet address
    * @param request.repayAmount - fxUSD amount to repay in wei (bigint)
    * @param request.withdrawAmount - Collateral amount to withdraw in wei (bigint)
    * @param request.withdrawTokenAddress - Withdraw token contract address
-   * @returns Object with transaction array (execute in order)
+   * @returns Object with `txs` (execute in nonce order) plus preview fields
+   *   `ltv`, `newLtv`, `fee`, `feeRatio`, `payAmount`, `leverage`,
+   *   `executionPrice`, `colls`, `debts`, `isClose`, `isZapOut`, `minOut`.
    */
   async repayAndWithdraw(request: RepayAndWithdrawRequest) {
     const {
@@ -439,14 +461,123 @@ export class FxSdk {
 
     const poolInfo = await pool.getPoolInfo()
 
-    const position = new Position({
+    const fxMint = new FxMint({
       positionId,
       poolInfo,
       userAddress,
     })
 
-    return position.repayAndWithdraw({
+    return fxMint.repayAndWithdraw({
       ...request,
+      withdrawTokenAddress: withdrawTokenAddress.toLowerCase(),
+    })
+  }
+
+  /**
+   * Read-only. Previews the `[minMint, maxMint]` fxUSD range the pool will
+   * accept for the given `(positionId, depositToken, depositAmount)`. Call
+   * this before {@link depositAndMint} to bound user input — the pool reverts
+   * if `mintAmount` is outside the range.
+   *
+   * Long positions only.
+   *
+   * @param request.market - 'ETH' or 'BTC'
+   * @param request.positionId - 0 for a new position, > 0 for an existing
+   *   position owned by `userAddress`
+   * @param request.userAddress - User wallet address (validated for existing positions)
+   * @param request.depositTokenAddress - Deposit token address; if not the
+   *   pool's deltaColl, the SDK quotes a zap to estimate the effective coll
+   * @param request.depositAmount - Deposit amount in wei (bigint)
+   * @returns `{ minMint, maxMint }` in fxUSD wei. `maxMint === 0n` means the
+   *   pool/position cannot accept additional debt.
+   */
+  async getFxMintMintableRange(request: {
+    market: Market
+    positionId: number
+    userAddress: string
+    depositTokenAddress: string
+    depositAmount: bigint
+  }): Promise<{ minMint: bigint; maxMint: bigint }> {
+    const { market, positionId, userAddress, depositTokenAddress, depositAmount } = request
+
+    if (depositAmount < 0n) {
+      throw new Error('Deposit amount must be non-negative')
+    }
+    if (!isAddress(depositTokenAddress)) {
+      throw new Error('Deposit token address must be a valid Ethereum address')
+    }
+    if (typeof positionId !== 'number' || positionId < 0) {
+      throw new Error('Position ID must be a non-negative integer')
+    }
+    if (!isAddress(userAddress)) {
+      throw new Error('User address must be a valid Ethereum address')
+    }
+
+    const poolName = getPoolName(market, 'long')
+    const pool = new Pool({ poolName })
+
+    if (positionId > 0) {
+      const owner = await getOwnerOf(pool.config.poolAddress, positionId)
+      if (owner.toLowerCase() !== userAddress.toLowerCase()) {
+        throw new Error('User is not the owner of this position')
+      }
+    }
+
+    const poolInfo = await pool.getPoolInfo()
+    const fxMint = new FxMint({ positionId, poolInfo, userAddress })
+
+    return fxMint.getMintableRange({
+      depositTokenAddress: depositTokenAddress.toLowerCase(),
+      depositAmount,
+    })
+  }
+
+  /**
+   * Read-only. Previews the `[minWithdraw, maxWithdraw]` collateral range for
+   * a given `repayAmount`, plus an `isClose` flag indicating that the
+   * repayment will fully close the position (`rawDebts - repayAmount <= 0`).
+   * Call this before {@link repayAndWithdraw} to bound user input — the pool
+   * reverts if `withdrawAmount` is outside the range.
+   *
+   * Long positions only. Range is denominated in `withdrawTokenAddress`'s
+   * native decimals. When `isClose` is true, `min === max` and the position
+   * surrenders all collateral.
+   */
+  async getFxMintWithdrawableRange(request: {
+    market: Market
+    positionId: number
+    userAddress: string
+    repayAmount: bigint
+    withdrawTokenAddress: string
+  }): Promise<{ minWithdraw: bigint; maxWithdraw: bigint; isClose: boolean }> {
+    const { market, positionId, userAddress, repayAmount, withdrawTokenAddress } = request
+
+    if (repayAmount < 0n) {
+      throw new Error('Repay amount must be non-negative')
+    }
+    if (!isAddress(withdrawTokenAddress)) {
+      throw new Error('Withdraw token address must be a valid Ethereum address')
+    }
+    if (typeof positionId !== 'number' || positionId < 1) {
+      throw new Error('Position ID must be a positive integer for withdraw range')
+    }
+    if (!isAddress(userAddress)) {
+      throw new Error('User address must be a valid Ethereum address')
+    }
+
+    const poolName = getPoolName(market, 'long')
+    const pool = new Pool({ poolName })
+
+    const owner = await getOwnerOf(pool.config.poolAddress, positionId)
+    if (owner.toLowerCase() !== userAddress.toLowerCase()) {
+      throw new Error('User is not the owner of this position')
+    }
+
+    const poolInfo = await pool.getPoolInfo()
+    const fxMint = new FxMint({ positionId, poolInfo, userAddress })
+
+    return fxMint.getWithdrawableRange({
+      repayAmount,
       withdrawTokenAddress: withdrawTokenAddress.toLowerCase(),
     })
   }

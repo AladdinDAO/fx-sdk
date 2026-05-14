@@ -1,6 +1,7 @@
 import { PoolName } from '@/types/pool'
 import { Decimal } from 'decimal.js'
 import { Market, PositionType } from '@/types'
+import { PRECISION } from '@/configs'
 
 export { Decimal }
 
@@ -19,6 +20,16 @@ export const getLeverage = (size: Decimal.Value, debt: Decimal.Value) => {
 export const getLTV = (rawDebts: Decimal.Value, rawColls: Decimal.Value, anchorPrice: Decimal.Value) => {
   if (rawColls == 0) return 0
   return cBN(rawDebts).div(cBN(anchorPrice).times(rawColls)).toNumber()
+}
+
+/**
+ * Converts a 1e18-scaled debt ratio (`debt / collValue`) into the equivalent
+ * leverage multiplier: `leverage = 1 / (1 - debtRatio)`. Returns `0` when
+ * `debtRatio >= 1e18` (would be infinite/negative leverage).
+ */
+export const getLeverageByDebtRatio = (debtRatio: Decimal.Value): number => {
+  if (cBN(debtRatio).gte(PRECISION)) return 0
+  return cBN(PRECISION).div(cBN(PRECISION).minus(debtRatio)).toNumber()
 }
 
 export const getDebtRatioRange = (

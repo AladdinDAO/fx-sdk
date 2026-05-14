@@ -68,24 +68,47 @@ async function repayAndWithdraw() {
   try {
     // Example: Repay debt and withdraw collateral
     // Replace with your actual position ID
-    const positionId = process.env.POSITION_ID ? parseInt(process.env.POSITION_ID) : 0
+    const positionId = process.env.POSITION_ID ? parseInt(process.env.POSITION_ID) : 708
 
+    const market: 'ETH' | 'BTC' = 'BTC'
+    const withdrawTokenAddress = tokens.WBTC
+    const repayAmount = parseEther('10000') // 10,000 fxUSD
+    const withdrawAmount = BigInt(0.5 * 1e8) // 0.5 WBTC
+
+    // 1) Preview withdrawable range and isClose flag
+    const range = await sdk.getFxMintWithdrawableRange({
+      market,
+      positionId,
+      userAddress,
+      repayAmount,
+      withdrawTokenAddress,
+    })
+    console.log('\nWithdrawable range (wei in withdraw token decimals):')
+    console.log(`  min: ${range.minWithdraw.toString()}`)
+    console.log(`  max: ${range.maxWithdraw.toString()}`)
+    console.log(`  isClose: ${range.isClose}`)
+
+    // 2) Build transactions + preview metrics
     const result = await sdk.repayAndWithdraw({
-      market: 'BTC', // 'ETH' or 'BTC' (only supports long positions)
-      positionId: 708,
-      repayAmount: parseEther('10000'), // Amount of fxUSD to repay (1000 fxUSD)
-      withdrawAmount: 0.5 * 1e8, // Amount of collateral to withdraw (0.5 ETH)
-      withdrawTokenAddress: tokens.WBTC, // Withdraw token address (stETH, weth, or wstETH for ETH; WBTC for BTC)
+      market,
+      positionId,
+      repayAmount,
+      withdrawAmount,
+      withdrawTokenAddress,
       userAddress,
       targets: [ROUTE_TYPES.FX_ROUTE, ROUTE_TYPES.FX_ROUTE_V3],
     })
 
-    console.log('\nTransaction Details:')
+    console.log('\nPreview:')
     console.log(`  Position ID: ${result.positionId}`)
     console.log(`  Leverage: ${result.leverage.toFixed(2)}x`)
     console.log(`  Execution Price: ${result.executionPrice}`)
+    console.log(`  LTV: ${(result.ltv * 100).toFixed(2)}% → ${(result.newLtv * 100).toFixed(2)}%`)
+    console.log(`  Fee: ${result.fee.toString()} fxUSD wei (rate ${(result.feeRatio * 100).toFixed(4)}%)`)
+    console.log(`  Pay Amount: ${result.payAmount.toString()} fxUSD wei`)
     console.log(`  Collateral: ${result.colls.toString()}`)
     console.log(`  Debt: ${result.debts.toString()}`)
+    console.log(`  isClose: ${result.isClose}, isZapOut: ${result.isZapOut}, minOut: ${result.minOut.toString()}`)
     console.log(`  Transactions: ${result.txs.length}`)
 
     if (result.txs.length === 0) {

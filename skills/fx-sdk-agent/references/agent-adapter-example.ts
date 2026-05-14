@@ -43,6 +43,40 @@ export type FxAction =
       userAddress: Address
     }
   | {
+      kind: 'depositAndMint'
+      market: 'ETH' | 'BTC'
+      positionId: number
+      userAddress: Address
+      depositTokenAddress: Address
+      depositAmount: bigint
+      mintAmount: bigint
+    }
+  | {
+      kind: 'repayAndWithdraw'
+      market: 'ETH' | 'BTC'
+      positionId: number
+      userAddress: Address
+      repayAmount: bigint
+      withdrawAmount: bigint
+      withdrawTokenAddress: Address
+    }
+  | {
+      kind: 'getFxMintMintableRange'
+      market: 'ETH' | 'BTC'
+      positionId: number
+      userAddress: Address
+      depositTokenAddress: Address
+      depositAmount: bigint
+    }
+  | {
+      kind: 'getFxMintWithdrawableRange'
+      market: 'ETH' | 'BTC'
+      positionId: number
+      userAddress: Address
+      repayAmount: bigint
+      withdrawTokenAddress: Address
+    }
+  | {
       kind: 'getBridgeQuote'
       sourceChainId: 1 | 8453
       destChainId: 1 | 8453
@@ -128,6 +162,70 @@ export async function runFxAction(action: FxAction, options: AdapterOptions = {}
       mode: 'execute_required' as const,
       message: 'Use wallet client to send selected route.txs sequentially.',
       routePreview: result.routes[0],
+    }
+  }
+
+  if (action.kind === 'getFxMintMintableRange') {
+    const range = await sdk.getFxMintMintableRange({
+      market: action.market,
+      positionId: action.positionId,
+      userAddress: action.userAddress,
+      depositTokenAddress: action.depositTokenAddress,
+      depositAmount: action.depositAmount,
+    })
+    return { mode: 'plan' as const, range }
+  }
+
+  if (action.kind === 'getFxMintWithdrawableRange') {
+    const range = await sdk.getFxMintWithdrawableRange({
+      market: action.market,
+      positionId: action.positionId,
+      userAddress: action.userAddress,
+      repayAmount: action.repayAmount,
+      withdrawTokenAddress: action.withdrawTokenAddress,
+    })
+    return { mode: 'plan' as const, range }
+  }
+
+  if (action.kind === 'depositAndMint') {
+    const result = await sdk.depositAndMint({
+      market: action.market,
+      positionId: action.positionId,
+      userAddress: action.userAddress,
+      depositTokenAddress: action.depositTokenAddress,
+      depositAmount: action.depositAmount,
+      mintAmount: action.mintAmount,
+    })
+    const { txs, ...preview } = result
+    if (options.planOnly ?? true) {
+      return { mode: 'plan' as const, preview, txs }
+    }
+    return {
+      mode: 'execute_required' as const,
+      message: 'Render preview to the user, then send result.txs sequentially.',
+      preview,
+      txs,
+    }
+  }
+
+  if (action.kind === 'repayAndWithdraw') {
+    const result = await sdk.repayAndWithdraw({
+      market: action.market,
+      positionId: action.positionId,
+      userAddress: action.userAddress,
+      repayAmount: action.repayAmount,
+      withdrawAmount: action.withdrawAmount,
+      withdrawTokenAddress: action.withdrawTokenAddress,
+    })
+    const { txs, ...preview } = result
+    if (options.planOnly ?? true) {
+      return { mode: 'plan' as const, preview, txs }
+    }
+    return {
+      mode: 'execute_required' as const,
+      message: 'Render preview to the user, then send result.txs sequentially.',
+      preview,
+      txs,
     }
   }
 
@@ -248,4 +346,23 @@ export const sampleDepositFxSavePayload: FxAction = {
   tokenIn: 'usdc',
   amount: 1_000_000n, // 1 USDC (6 decimals)
   slippage: 0.5,
+}
+
+export const sampleFxMintMintableRangePayload: FxAction = {
+  kind: 'getFxMintMintableRange',
+  market: 'BTC',
+  positionId: 0,
+  userAddress: '0x0000000000000000000000000000000000000001',
+  depositTokenAddress: tokens.WBTC as Address,
+  depositAmount: 10n ** 8n, // 1 WBTC
+}
+
+export const sampleDepositAndMintPayload: FxAction = {
+  kind: 'depositAndMint',
+  market: 'BTC',
+  positionId: 0,
+  userAddress: '0x0000000000000000000000000000000000000001',
+  depositTokenAddress: tokens.WBTC as Address,
+  depositAmount: 10n ** 8n, // 1 WBTC
+  mintAmount: 20_000n * 10n ** 18n, // 20,000 fxUSD
 }

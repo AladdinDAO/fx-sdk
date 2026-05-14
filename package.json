@@ -43,6 +43,7 @@
     "example:positions": "tsx example/get-positions.ts",
     "example:deposit": "tsx example/deposit-and-mint.ts",
     "example:repay": "tsx example/repay-and-withdraw.ts",
+    "example:fxmint": "tsx example/fxmint-overview.ts",
     "example:adjust": "tsx example/adjust-position-leverage.ts",
     "example:bridge": "tsx example/layerzero-bridge.ts",
     "example:fxsave-balance": "tsx example/get-fxsave-balance.ts",

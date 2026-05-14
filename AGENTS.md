@@ -28,8 +28,10 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 | **increasePosition** | Open new (`positionId: 0`) or add to existing. Returns `routes` with `txs`. Optional `targets` for route types. |
 | **reducePosition** | Reduce size or close; `isClosePosition: true` to close fully. |
 | **adjustPositionLeverage** | Change leverage of existing position. |
-| **depositAndMint** | Long only: deposit collateral, mint fxUSD. |
-| **repayAndWithdraw** | Long only: repay fxUSD, withdraw collateral. |
+| **depositAndMint** | Long only (fxMINT): deposit collateral, mint fxUSD. Returns txs + preview (ltv → newLtv, fee, leverage, isZapIn, minOut). |
+| **repayAndWithdraw** | Long only (fxMINT): repay fxUSD, withdraw collateral. Returns txs + preview (ltv → newLtv, fee, payAmount, isClose, isZapOut, minOut). |
+| **getFxMintMintableRange** | Read-only. Preview `[minMint, maxMint]` fxUSD range allowed for a given (positionId, depositToken, depositAmount). Bound `mintAmount` before depositAndMint. |
+| **getFxMintWithdrawableRange** | Read-only. Preview `[minWithdraw, maxWithdraw]` collateral range and `isClose` for a given repayAmount. Bound `withdrawAmount` before repayAndWithdraw. |
 | **getBridgeQuote** | Fee quote for LayerZero V2 bridge Base <-> Ethereum (fxUSD, fxSAVE). |
 | **buildBridgeTx** | Build bridge tx payload (`to`, `data`, `value`); send on source chain. |
 | **getFxSaveBalance** | fxSAVE balance (shares wei, optional assets wei). Read-only. |
@@ -44,6 +46,14 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 
 - **ETH**: `market: 'ETH'`, `type: 'long'` or `'short'` (wstETH).
 - **BTC**: `market: 'BTC'`, `type: 'long'` or `'short'` (WBTC).
+
+## fxMINT (long-only deposit & mint, repay & withdraw)
+
+- **Pool config**: `Pool.getPoolInfo()` exposes the SDK-level fields needed to build txs and previews: `borrowFeeRatio` / `repayFeeRatio`, `poolMinDebtRatio` / `poolMaxDebtRatio`, plus the standard capacity/price fields. The SDK does **not** surface display-only state (borrow APY, funding rates, liquidate ratio, liquidation-brake price, borrow allow/pause flags) — fetch those from the on-chain contracts directly or your indexer if you need to render them.
+- **Position health**: `getPositionInfo` returns `currentLeverage` / `lsdLeverage` plus the raw collateral/debt amounts. For LTV display, the caller can compute it as `rawDebts / (rawColls * anchorPrice)` using `Pool.getPoolInfo().anchorPrice`.
+- **Range guards**: call `getFxMintMintableRange` / `getFxMintWithdrawableRange` before building txs. The pool will revert if `mintAmount`/`withdrawAmount` falls outside the returned bounds.
+- **Preview vs. tx**: `depositAndMint` / `repayAndWithdraw` return preview metrics (`ltv → newLtv`, `fee`, `leverage`, etc.) alongside `txs`. Always render the preview to the user before broadcasting.
+- **Fee semantics**: `feeRatio` is a fraction in [0, 1] (e.g. `0.0005` = 5 bps). `fee` in the response is the absolute fxUSD-wei fee. `payAmount` for repay already includes the fee.
 
 ## Security and execution
 
@@ -62,7 +72,10 @@ Use `tokens` for addresses: `tokens.weth`, `tokens.wstETH`, `tokens.WBTC`, `toke
 
 - **getPositions**: `[{ positionId, rawColls, rawDebts, currentLeverage, lsdLeverage, rawCollsToken, rawDebtsToken, rawCollsDecimals, rawDebtsDecimals }]` (PositionInfo).
 - **increasePosition / reducePosition / adjustPositionLeverage**: `{ positionId?, slippage, routes }`. Each route has `txs`; execute in order. Each `tx`: `type`, `from`, `to`, `data`, `nonce`, optional `value`.
-- **depositAndMint / repayAndWithdraw**: `{ txs }`; execute in order.
+- **depositAndMint**: `{ positionId, leverage, executionPrice, colls, debts, ltv, newLtv, fee, feeRatio, isZapIn, minOut, txs }`; execute `txs` in order.
+- **repayAndWithdraw**: `{ positionId, leverage, executionPrice, colls, debts, ltv, newLtv, fee, feeRatio, payAmount, isClose, isZapOut, minOut, txs }`; execute `txs` in order. `payAmount` is `repayAmount * (1 + repayFeeRatio)` — the actual fxUSD the user must hold.
+- **getFxMintMintableRange**: `{ minMint, maxMint }` (bigint wei). `maxMint = 0n` means the pool/position cannot accept more debt.
+- **getFxMintWithdrawableRange**: `{ minWithdraw, maxWithdraw, isClose }`. When `isClose=true`, `min == max` and the surrendered collateral is fully converted into the withdraw token.
 - **getBridgeQuote**: `{ nativeFee, lzTokenFee }` (wei). Use source chain RPC.
 - **buildBridgeTx**: `{ tx: { to, data, value }, quote }`. Send single `tx` on source chain (1 or 8453).
 - **getFxSaveBalance**: `{ balanceWei, assetsWei? }`.

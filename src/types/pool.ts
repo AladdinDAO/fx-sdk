@@ -35,9 +35,6 @@ export interface PoolInfo extends PoolConfig {
   debtBalance: bigint
 
   isPaused: boolean
-  // isBorrowAllowed: boolean
-  // isBorrowPaused: boolean
-  // isStableRepayAllowed: boolean
 
   anchorPrice: string
   minPrice: string
@@ -54,7 +51,12 @@ export interface PoolInfo extends PoolConfig {
   poolMinDebtRatio: bigint
   poolMaxDebtRatio: bigint
 
+  /** Leverage open fee ratio (number in `[0, 1]`, e.g. `0.001` = 10 bps). */
   openFeeRatio: number
+  /** Leverage close fee ratio. */
   closeFeeRatio: number
+  /** fxMINT deposit-and-mint fee ratio (e.g. `0.0005` = 5 bps). */
+  borrowFeeRatio: number
+  /** fxMINT repay-and-withdraw fee ratio. */
   repayFeeRatio: number
 }

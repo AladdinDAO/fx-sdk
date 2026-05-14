@@ -54,6 +54,9 @@ npm run example:deposit
 # Repay and withdraw
 npm run example:repay
 
+# fxMINT overview (read-only: pool config + positions + ranges)
+npm run example:fxmint
+
 # Adjust position leverage
 npm run example:adjust
 
@@ -83,6 +86,9 @@ npx tsx example/deposit-and-mint.ts
 
 # Repay and withdraw
 npx tsx example/repay-and-withdraw.ts
+
+# fxMINT overview (read-only)
+npx tsx example/fxmint-overview.ts
 
 # Adjust position leverage
 npx tsx example/adjust-position-leverage.ts
@@ -136,7 +142,7 @@ The script will query and display:
 
 ### 4. deposit-and-mint.ts
 
-Example script for depositing collateral and minting fxUSD.
+Example script for fxMINT: deposit collateral and mint fxUSD.
 
 ```bash
 npm run example:deposit
@@ -147,13 +153,13 @@ npx tsx example/deposit-and-mint.ts
 **Note:** You need to modify the `positionId` in the script to your actual position ID (use 0 for a new position).
 
 The script will:
-- Deposit collateral tokens (stETH, weth, or wstETH for ETH; WBTC for BTC)
-- Mint fxUSD tokens
-- Execute all required transactions sequentially
+- Preview the mintable `[min, max]` range via `getFxMintMintableRange` and warn if `mintAmount` falls outside.
+- Build the deposit-and-mint txs and print preview metrics: `ltv → newLtv`, fee, leverage, `isZapIn`, `minOut`.
+- Execute the txs sequentially. Accepts `stETH` / `weth` / `wstETH` (ETH market) or `WBTC` (BTC market).
 
 ### 5. repay-and-withdraw.ts
 
-Example script for repaying debt and withdrawing collateral.
+Example script for fxMINT: repay fxUSD debt and withdraw collateral.
 
 ```bash
 npm run example:repay
@@ -164,10 +170,23 @@ npx tsx example/repay-and-withdraw.ts
 **Note:** You need to modify the `positionId` in the script to your actual position ID.
 
 The script will:
-- Repay fxUSD debt
-- Withdraw collateral tokens
+- Preview the withdrawable `[min, max]` range and `isClose` flag via `getFxMintWithdrawableRange`.
+- Build the repay-and-withdraw txs and print preview metrics: `ltv → newLtv`, fee, `payAmount` (= `repayAmount * (1 + repayFeeRatio)`), `isClose`, `isZapOut`, `minOut`.
+- Execute the txs sequentially.
 
-### 6. adjust-position-leverage.ts
+### 6. fxmint-overview.ts
+
+Read-only fxMINT overview: prints SDK-level core pool data (`borrowFeeRatio`, `repayFeeRatio`, `isPaused`), the user's long positions per market (positionId, rawColls, rawDebts, leverage), and a sample mintable / withdrawable range.
+
+```bash
+npm run example:fxmint
+# or
+npx tsx example/fxmint-overview.ts
+```
+
+> Display-only state such as borrow APY, funding rate, and the `isBorrowAllowed` / `isBorrowPaused` flags is intentionally **not** surfaced by the SDK. Fetch it from the on-chain contracts or your indexer if you need to render it.
+
+### 7. adjust-position-leverage.ts
 
 Example script for adjusting the leverage of an existing position.
 
@@ -185,7 +204,7 @@ The script will:
 - Display the new leverage after adjustment
 - Execute all required transactions sequentially
 
-### 7. layerzero-bridge.ts
+### 8. layerzero-bridge.ts
 
 Example script for bridging tokens between **Base** and **Ethereum** via LayerZero V2 OFT.
 
