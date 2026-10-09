@@ -125,9 +125,18 @@ export class Pool {
   async getPoolInfo(): Promise<PoolInfo> {
     const { isShort } = this.config
 
-    const poolData = await this.getPoolData()
-    const rateRes = await this.price.getRateRes()
-    const oraclePrice = await this.price.getOraclePrice()
+    // Start the independent view reads together, then await them in the
+    // original order so the same error surfaces first. The empty catches only
+    // mark early rejections as handled; the awaits below still throw them.
+    const poolDataPromise = this.getPoolData()
+    const rateResPromise = this.price.getRateRes()
+    const oraclePricePromise = this.price.getOraclePrice()
+    rateResPromise.catch(() => {})
+    oraclePricePromise.catch(() => {})
+
+    const poolData = await poolDataPromise
+    const rateRes = await rateResPromise
+    const oraclePrice = await oraclePricePromise
 
     const buyPrice = cBN(await this.price.getBuyPrice())
       .times(1e18)
