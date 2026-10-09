@@ -54,7 +54,8 @@ export const getEncodeMiscData = (
   minDebtRatio: string,
   maxDebtRatio: string
 ) => {
-  return cBN(maxDebtRatio).times(cBN(2).pow(60)).plus(minDebtRatio).toFixed(0)
+  // Pack the two uint60 fields exactly; Decimal rounds to 20 significant digits
+  return ((BigInt(maxDebtRatio) << 60n) + BigInt(minDebtRatio)).toString()
 }
 
 export const getEncodeMiscDataWithSlippage = (targetDebtRatio: string, slippage: number) => {
