@@ -6,7 +6,10 @@ import { FxRoute } from '@/core/aggregators/fxRoute'
 import { ROUTE_TYPES } from '@/core/aggregators/types'
 import { getClient } from '@/core/client'
 import { contracts } from '@/configs/contracts'
-import { batchedMulticall, MulticallContractCall } from '@/utils/multicall'
+import {
+  createBatchedMulticallSequence,
+  MulticallContractCall,
+} from '@/utils/multicall'
 import { Abi } from 'viem'
 import { QuoteResult, RouteResult } from './types'
 import { ConvertData } from '@/types'
@@ -19,7 +22,8 @@ const searchAmount = async (
   right: string,
   expect: string,
   convertData: ConvertData,
-  _precision: number
+  _precision: number,
+  multicall = createBatchedMulticallSequence(getClient())
 ) => {
   let times = 0
   let duration = new Date().getTime()
@@ -43,7 +47,7 @@ const searchAmount = async (
       )
     }
     times++
-    const results = (await batchedMulticall(getClient(), calls)) as {
+    const results = (await multicall(calls)) as {
       result: bigint
     }[]
 
@@ -178,6 +182,8 @@ export const getFxUSDByBorrowAmount = async ({
   baseTokenAddress: string
 }) => {
   const results: QuoteResult[] = []
+  // One sequence for both route searches keeps the delay between them
+  const multicall = createBatchedMulticallSequence(getClient())
 
   const zapRouteData = getZapRoutes({
     fromTokenAddress: tokens.fxUSD,
@@ -190,7 +196,8 @@ export const getFxUSDByBorrowAmount = async ({
       cBN(hintFxUSDAmount).times(2).toFixed(0, 1),
       borrowAmount,
       zapRouteData,
-      1e16 // Teacher Lin requested modification, 1e16 corresponds to 0.01 fxUSD, preventing issues with small amounts
+      1e16, // Teacher Lin requested modification, 1e16 corresponds to 0.01 fxUSD, preventing issues with small amounts
+      multicall
     )
     results.push({
       name: ROUTE_TYPES.FX_ROUTE,
@@ -214,7 +221,8 @@ export const getFxUSDByBorrowAmount = async ({
         cBN(hintFxUSDAmount).times(2).toFixed(0, 1),
         borrowAmount,
         zapRouteData2,
-        1e16 // Teacher Lin requested modification, 1e16 corresponds to 0.01 fxUSD, preventing issues with small amounts
+        1e16, // Teacher Lin requested modification, 1e16 corresponds to 0.01 fxUSD, preventing issues with small amounts
+        multicall
       )
       results.push({
         name: ROUTE_TYPES.FX_ROUTE_V3,
@@ -247,6 +255,8 @@ export const getBorrowByFxUSDAmount = async ({
   precision: number
 }) => {
   const results: QuoteResult[] = []
+  // One sequence for both route searches keeps the delay between them
+  const multicall = createBatchedMulticallSequence(getClient())
 
   const zapRouteData = getZapRoutes({
     fromTokenAddress: baseTokenAddress,
@@ -259,7 +269,8 @@ try{
       cBN(hintToBorrow).times(2).toFixed(0, 1),
       fxUSDAmount,
       zapRouteData,
-      cBN('0.00001').times(precision).toNumber()
+      cBN('0.00001').times(precision).toNumber(),
+      multicall
     )
     results.push({
       name: ROUTE_TYPES.FX_ROUTE,
@@ -283,7 +294,8 @@ try{
         cBN(hintToBorrow).times(2).toFixed(0, 1),
         fxUSDAmount,
         zapRouteData2,
-        cBN('0.00001').times(precision).toNumber()
+        cBN('0.00001').times(precision).toNumber(),
+        multicall
       )
       results.push({
         name: ROUTE_TYPES.FX_ROUTE_V3,
